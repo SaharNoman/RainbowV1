@@ -28,9 +28,13 @@ import os
 if os.path.exists("frontend"):
     app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
-@app.get("/")
-def serve_frontend():
-    return FileResponse("frontend/index.html")
+@app.get("/", response_class=FileResponse)
+async def serve_frontend():
+    return FileResponse("frontend/index.html", media_type="text/html")
+
+@app.get("/dashboard", response_class=FileResponse)
+async def serve_dashboard():
+    return FileResponse("frontend/index.html", media_type="text/html")
 
 DB_PATH = "inventory.db"
 
