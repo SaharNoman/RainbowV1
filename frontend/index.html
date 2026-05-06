@@ -142,6 +142,8 @@
 <div class="main-tabs">
   <button class="main-tab active" id="tab-stock" onclick="switchMode('stock')">📦 Stock Inventory</button>
   <button class="main-tab sales-tab" id="tab-sales" onclick="switchMode('sales')">📈 Sales Data</button>
+  <button class="main-tab" id="tab-negstock" onclick="switchMode('negstock')" style="color:#8b0000">⛔ Negative Stock</button>
+  <button class="main-tab" id="tab-salesdrop" onclick="switchMode('salesdrop')" style="color:var(--orange)">📉 Sales Drop</button>
 </div>
 
 <div class="layout">
@@ -190,6 +192,8 @@ async function switchMode(m) {
   mode = m;
   document.getElementById("tab-stock").classList.toggle("active", m === "stock");
   document.getElementById("tab-sales").classList.toggle("active", m === "sales");
+  document.getElementById("tab-negstock").classList.toggle("active", m === "negstock");
+  document.getElementById("tab-salesdrop").classList.toggle("active", m === "salesdrop");
   document.querySelectorAll(".store-btn").forEach(b => {
     b.classList.toggle("sales-mode", m === "sales");
   });
@@ -281,7 +285,9 @@ async function selectStore(store) {
 // ══════════════════════════════════════════════
 async function renderMain() {
   if (mode === "stock") await renderStockMain();
-  else await renderSalesMain();
+  else if (mode === "sales") await renderSalesMain();
+  else if (mode === "negstock") await renderNegStockMain();
+  else if (mode === "salesdrop") await renderSalesDropMain();
 }
 
 // ══════════════════════════════════════════════
@@ -598,6 +604,250 @@ function showToast(msg, isError=false) {
 // ══════════════════════════════════════════════
 //  START
 // ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+//  NEGATIVE STOCK VIEW
+// ══════════════════════════════════════════════
+async function renderNegStockMain() {
+  const main = document.getElementById("main-content");
+  main.innerHTML = `<div class="loading">Loading negative stock data...</div>`;
+
+  try {
+    const url = currentStore
+      ? `${API}/alerts/negative-stock?store=${currentStore}`
+      : `${API}/alerts/negative-stock`;
+    const summaryUrl = `${API}/alerts/negative-stock/summary`;
+
+    const [items, summary] = await Promise.all([
+      fetch(url).then(r => r.json()),
+      fetch(summaryUrl).then(r => r.json())
+    ]);
+
+    // Stats
+    const stores = currentStore ? [currentStore] : Object.keys(summary);
+    const totalNeg = items.length;
+    const worstItem = items.length > 0 ? items[0] : null;
+    const totalDeficit = items.reduce((s, i) => s + i.deficit, 0).toFixed(1);
+
+    const bannerHtml = totalNeg > 0 ? `
+      <div class="alert-banner" style="background:#ffe4e4;border-color:#f5a8a8">
+        <div class="icon">⛔</div>
+        <div>
+          <strong style="color:#8b0000">⛔ ${totalNeg} Negative Stock Item${totalNeg>1?'s':''}</strong>
+          <p>These items have stock below zero — sales were recorded but stock was not updated. Immediate data correction required.</p>
+        </div>
+      </div>` : `
+      <div class="alert-banner" style="background:var(--green-light);border-color:#a8d5b8">
+        <div class="icon">✅</div>
+        <div><strong style="color:var(--green)">No Negative Stock — All items have valid stock levels</strong></div>
+      </div>`;
+
+    main.innerHTML = `
+      ${bannerHtml}
+      <div class="summary-row">
+        <div class="stat-card ${totalNeg>0?'crimson':''}">
+          <div class="label">Negative Stock Items</div>
+          <div class="value">${totalNeg}</div>
+        </div>
+        <div class="stat-card ${totalNeg>0?'crimson':''}">
+          <div class="label">Total Deficit Units</div>
+          <div class="value">${totalDeficit}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Stores Affected</div>
+          <div class="value">${Object.keys(summary).length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Worst Item</div>
+          <div class="value" style="font-size:14px">${worstItem ? worstItem.item_name.substring(0,18)+'...' : 'None'}</div>
+        </div>
+      </div>
+      <div class="section-header">
+        <h2 id="negstock-title">${totalNeg} Negative Stock Item${totalNeg!==1?'s':''}</h2>
+      </div>
+      <input class="search-bar" type="text" id="negstock-search" placeholder="Search items..." oninput="filterNegStock()" style="border-color:#8b0000"/>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Item Name</th><th>Category</th><th>Store</th>
+            <th>Current Stock</th><th>Threshold</th><th>Deficit</th><th>Action Required</th>
+          </tr></thead>
+          <tbody id="negstock-tbody"></tbody>
+        </table>
+      </div>`;
+
+    window._negStockItems = items;
+    filterNegStock();
+
+  } catch(e) {
+    document.getElementById("main-content").innerHTML =
+      `<div class="empty">❌ Cannot connect to API.</div>`;
+  }
+}
+
+function filterNegStock() {
+  const search = (document.getElementById("negstock-search")?.value || "").toLowerCase();
+  const tbody = document.getElementById("negstock-tbody");
+  if (!tbody) return;
+  const items = (window._negStockItems || []).filter(i =>
+    i.item_name.toLowerCase().includes(search) ||
+    i.store_name.toLowerCase().includes(search)
+  );
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">No negative stock items found.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(i => `
+    <tr class="negative-row">
+      <td><strong>${i.item_name}</strong></td>
+      <td>${i.category}</td>
+      <td><strong>${i.store_name}</strong></td>
+      <td><span class="num negative">${i.current_stock}</span></td>
+      <td><span class="num">${i.threshold}</span></td>
+      <td><span class="badge critical">-${i.deficit} units</span></td>
+      <td><span style="font-size:12px;color:#8b0000">⚠ Verify stock count & correct data</span></td>
+    </tr>`).join("");
+}
+
+
+// ══════════════════════════════════════════════
+//  SALES DROP VIEW
+// ══════════════════════════════════════════════
+let dropThreshold = 30;
+
+async function renderSalesDropMain() {
+  const main = document.getElementById("main-content");
+  main.innerHTML = `<div class="loading">Loading sales drop data...</div>`;
+
+  try {
+    const monthsRes = await fetch(`${API}/sales/months`);
+    const months = await monthsRes.json();
+    const latestMonth = months[months.length - 1];
+    if (!selectedMonth) selectedMonth = latestMonth;
+
+    const monthOptions = months.slice(1).map(m =>
+      `<option value="${m}" ${m===selectedMonth?'selected':''}>${m}</option>`
+    ).join("");
+
+    const url = currentStore
+      ? `${API}/alerts/sales-drop?drop_pct=${dropThreshold}&month=${selectedMonth}&store=${currentStore}`
+      : `${API}/alerts/sales-drop?drop_pct=${dropThreshold}&month=${selectedMonth}`;
+
+    const items = await fetch(url).then(r => r.json());
+
+    const critical = items.filter(i => i.severity === "critical").length;
+    const warning  = items.filter(i => i.severity === "warning").length;
+    const prevMonth = items.length > 0 ? items[0].prev_month : "";
+
+    const bannerHtml = items.length > 0 ? `
+      <div class="alert-banner" style="background:#fef3c7;border-color:#fcd34d">
+        <div class="icon">📉</div>
+        <div>
+          <strong style="color:var(--orange)">📉 ${items.length} Sales Drop Alert${items.length>1?'s':''}</strong>
+          <p>${critical} critical (50%+ drop) and ${warning} warning (${dropThreshold}-50% drop) vs ${prevMonth}</p>
+        </div>
+      </div>` : `
+      <div class="alert-banner" style="background:var(--green-light);border-color:#a8d5b8">
+        <div class="icon">✅</div>
+        <div><strong style="color:var(--green)">No Sales Drops — All items performing well vs previous month</strong></div>
+      </div>`;
+
+    main.innerHTML = `
+      <div class="month-bar">
+        <label>📅 Compare Month:</label>
+        <select class="month-select" id="drop-month-sel" onchange="onDropMonthChange(this.value)">${monthOptions}</select>
+        <label style="margin-left:16px">⚡ Drop Threshold:</label>
+        <select class="month-select" id="drop-thresh-sel" onchange="onDropThreshChange(this.value)">
+          <option value="20" ${dropThreshold==20?'selected':''}>20% drop</option>
+          <option value="30" ${dropThreshold==30?'selected':''}>30% drop</option>
+          <option value="50" ${dropThreshold==50?'selected':''}>50% drop</option>
+        </select>
+      </div>
+      ${bannerHtml}
+      <div class="summary-row">
+        <div class="stat-card ${items.length>0?'amber':''}">
+          <div class="label">Total Drop Alerts</div>
+          <div class="value">${items.length}</div>
+        </div>
+        <div class="stat-card ${critical>0?'crimson':''}">
+          <div class="label">Critical (50%+)</div>
+          <div class="value">${critical}</div>
+        </div>
+        <div class="stat-card ${warning>0?'amber':''}">
+          <div class="label">Warning (${dropThreshold}-50%)</div>
+          <div class="value">${warning}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Comparing</div>
+          <div class="value" style="font-size:14px">${prevMonth || 'N/A'} → ${selectedMonth}</div>
+        </div>
+      </div>
+      <div class="section-header">
+        <h2>${items.length} Sales Drop Alert${items.length!==1?'s':''} — ${selectedMonth} vs ${prevMonth}</h2>
+      </div>
+      <input class="search-bar" type="text" id="drop-search" placeholder="Search articles..." oninput="filterSalesDrop()" style="border-color:var(--orange)"/>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Article</th><th>Category</th><th>Store</th>
+            <th>${prevMonth} Sales</th><th>${selectedMonth} Sales</th><th>Drop %</th><th>Severity</th>
+          </tr></thead>
+          <tbody id="drop-tbody"></tbody>
+        </table>
+      </div>`;
+
+    window._dropItems = items;
+    filterSalesDrop();
+
+  } catch(e) {
+    document.getElementById("main-content").innerHTML =
+      `<div class="empty">❌ Cannot connect to API.</div>`;
+  }
+}
+
+function filterSalesDrop() {
+  const search = (document.getElementById("drop-search")?.value || "").toLowerCase();
+  const tbody = document.getElementById("drop-tbody");
+  if (!tbody) return;
+  const items = (window._dropItems || []).filter(i =>
+    i.article.toLowerCase().includes(search) ||
+    i.store_name.toLowerCase().includes(search)
+  );
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">No sales drop alerts found.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(i => {
+    const barWidth = Math.min(i.drop_pct, 100);
+    const rowClass = i.severity === "critical" ? "critical-row" : "warning-row";
+    const badgeClass = i.severity === "critical" ? "critical" : "warning-badge";
+    return `
+    <tr class="${rowClass}">
+      <td>${i.article}</td>
+      <td>${i.category}</td>
+      <td><strong>${i.store_name}</strong></td>
+      <td><span class="num ok">${i.prev_qty}</span></td>
+      <td><span class="num ${i.severity==='critical'?'low':'grey'}">${i.current_qty}</span></td>
+      <td>
+        <span class="drop-bar" style="width:${barWidth*0.6}px"></span>
+        <strong style="color:${i.severity==='critical'?'#8b0000':'var(--orange)'}">${i.drop_pct}%</strong>
+      </td>
+      <td><span class="badge ${badgeClass}">${i.severity==='critical'?'🔴 CRITICAL':'🟡 WARNING'}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+async function onDropMonthChange(m) {
+  selectedMonth = m;
+  await renderSalesDropMain();
+}
+
+async function onDropThreshChange(v) {
+  dropThreshold = parseInt(v);
+  await renderSalesDropMain();
+}
+
+
 init();
 </script>
 </body>

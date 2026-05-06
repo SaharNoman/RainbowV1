@@ -426,3 +426,138 @@ def get_threshold_info(sale_id: int):
         "auto_threshold": row[3],
         "is_manual": bool(row[4])
     }
+
+# ════════════════════════════════════════════════════════
+#  NEGATIVE STOCK ALERT ENDPOINTS
+# ════════════════════════════════════════════════════════
+
+@app.get("/alerts/negative-stock")
+def negative_stock(store: str = Query(None)):
+    """Items with stock below zero."""
+    db = SessionLocal()
+    query = db.query(Inventory).filter(Inventory.current_stock < 0)
+    if store:
+        query = query.filter(Inventory.store_name == store)
+    items = query.order_by(Inventory.current_stock).all()
+    db.close()
+    return [
+        {
+            "id": i.id,
+            "item_name": i.item_name,
+            "category": i.category,
+            "store_name": i.store_name,
+            "current_stock": i.current_stock,
+            "threshold": i.threshold,
+            "deficit": round(abs(i.current_stock), 2),
+        }
+        for i in items
+    ]
+
+
+@app.get("/alerts/negative-stock/summary")
+def negative_stock_summary():
+    """Count of negative stock items per store."""
+    db = SessionLocal()
+    items = db.query(Inventory).filter(Inventory.current_stock < 0).all()
+    db.close()
+    summary = {}
+    for i in items:
+        s = i.store_name
+        if s not in summary:
+            summary[s] = {"count": 0, "total_deficit": 0}
+        summary[s]["count"] += 1
+        summary[s]["total_deficit"] += abs(i.current_stock)
+    return summary
+
+
+# ════════════════════════════════════════════════════════
+#  SALES DROP ALERT ENDPOINTS
+# ════════════════════════════════════════════════════════
+
+@app.get("/alerts/sales-drop")
+def sales_drop(drop_pct: float = Query(30.0), store: str = Query(None), month: str = Query(None)):
+    """Items where sales dropped by more than drop_pct% vs previous month."""
+    conn = get_raw_conn()
+    cur  = conn.cursor()
+
+    # Get sorted months
+    cur.execute("SELECT DISTINCT month FROM sales")
+    months_raw = [r[0] for r in cur.fetchall()]
+    mo = {'JAN':1,'FEB':2,'MAR':3,'APR':4,'MAY':5,'JUN':6,'JUL':7,'AUG':8,'SEP':9,'OCT':10,'NOV':11,'DEC':12}
+    months_raw.sort(key=lambda m: (int(m.split('-')[1]), mo.get(m.split('-')[0][:3].upper(), 0)))
+
+    if not month:
+        month = months_raw[-1] if months_raw else None
+    if not month or month not in months_raw:
+        conn.close()
+        return []
+
+    idx = months_raw.index(month)
+    if idx == 0:
+        conn.close()
+        return []
+
+    prev_month = months_raw[idx - 1]
+
+    # Get current month data
+    if store:
+        cur.execute(
+            "SELECT article, category, store_name, quantity FROM sales WHERE month=? AND store_name=?",
+            (month, store)
+        )
+    else:
+        cur.execute(
+            "SELECT article, category, store_name, quantity FROM sales WHERE month=?",
+            (month,)
+        )
+    curr_rows = {(r[0], r[2]): (r[1], r[3]) for r in cur.fetchall()}
+
+    # Get previous month data
+    if store:
+        cur.execute(
+            "SELECT article, store_name, quantity FROM sales WHERE month=? AND store_name=?",
+            (prev_month, store)
+        )
+    else:
+        cur.execute(
+            "SELECT article, store_name, quantity FROM sales WHERE month=?",
+            (prev_month,)
+        )
+    prev_rows = {(r[0], r[1]): r[2] for r in cur.fetchall()}
+    conn.close()
+
+    alerts = []
+    for (article, store_name), (category, curr_qty) in curr_rows.items():
+        prev_qty = prev_rows.get((article, store_name), None)
+        if prev_qty is None or prev_qty <= 0:
+            continue
+        drop = round((prev_qty - curr_qty) / prev_qty * 100, 1)
+        if drop >= drop_pct:
+            alerts.append({
+                "article": article,
+                "category": category,
+                "store_name": store_name,
+                "current_month": month,
+                "prev_month": prev_month,
+                "current_qty": curr_qty,
+                "prev_qty": prev_qty,
+                "drop_pct": drop,
+                "severity": "critical" if drop >= 50 else "warning"
+            })
+
+    alerts.sort(key=lambda x: x["drop_pct"], reverse=True)
+    return alerts
+
+
+@app.get("/alerts/sales-drop/summary")
+def sales_drop_summary(drop_pct: float = Query(30.0), month: str = Query(None)):
+    """Summary of sales drop alerts per store."""
+    all_drops = sales_drop(drop_pct=drop_pct, month=month)
+    summary = {}
+    for item in all_drops:
+        s = item["store_name"]
+        if s not in summary:
+            summary[s] = {"total_drops": 0, "critical": 0, "warning": 0}
+        summary[s]["total_drops"] += 1
+        summary[s][item["severity"]] += 1
+    return summary
