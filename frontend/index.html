@@ -317,18 +317,25 @@ async function renderStockMain() {
 
   main.innerHTML = `
     ${bannerHtml}
-    <div class="summary-row">
-      <div class="stat-card"><div class="label">Total Items</div><div class="value">${total}</div></div>
-      <div class="stat-card ${low>0?'danger':''}"><div class="label">Low Stock</div><div class="value">${low}</div></div>
-      <div class="stat-card"><div class="label">Stores</div><div class="value">${stores.length}</div></div>
-      <div class="stat-card"><div class="label">Health</div><div class="value">${health}%</div></div>
+    <div class="summary-row" id="stock-cards-row">
+      <div class="stat-card clickable ${stockTab==='all'?'selected selected-green':''}" onclick="setStockTab('all')" title="Show all items">
+        <div class="label">📦 Total Items</div><div class="value">${total}</div>
+      </div>
+      <div class="stat-card clickable ${low>0?'danger':''} ${stockTab==='low'?'selected selected-red':''}" onclick="setStockTab('low')" title="Show low stock items only">
+        <div class="label">⚠ Low Stock</div><div class="value">${low}</div>
+      </div>
+      <div class="stat-card clickable ${negCount>0?'crimson':''} ${stockTab==='neg'?'selected selected-crimson':''}" onclick="setStockTab('neg')" title="Show negative stock items only">
+        <div class="label">⛔ Negative Stock</div><div class="value">${negCount}</div>
+      </div>
+      <div class="stat-card" title="Number of stores">
+        <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
+      </div>
+      <div class="stat-card" title="Stock health percentage">
+        <div class="label">💚 Health</div><div class="value">${health}%</div>
+      </div>
     </div>
     <div class="section-header">
       <h2 id="stock-title">All Items</h2>
-      <div class="tabs">
-        <button class="tab ${stockTab==='all'?'active':''}" onclick="setStockTab('all')">All Items</button>
-        <button class="tab ${stockTab==='low'?'active':''}" onclick="setStockTab('low')">⚠ Low Stock Only</button>
-      </div>
     </div>
     <input class="search-bar" type="text" id="stock-search" placeholder="Search items..." oninput="renderStockTable()"/>
     <div class="table-wrap">
@@ -341,11 +348,15 @@ async function renderStockMain() {
       </table>
     </div>`;
 
-  // Fetch items
-  const url = currentStore ? `${API}/inventory?store=${currentStore}` : `${API}/inventory`;
+  // Fetch items + negative stock count
+  const url    = currentStore ? `${API}/inventory?store=${currentStore}` : `${API}/inventory`;
+  const negUrl = currentStore ? `${API}/alerts/negative-stock?store=${currentStore}` : `${API}/alerts/negative-stock`;
   try {
-    const res = await fetch(url);
+    const [res, negRes] = await Promise.all([fetch(url), fetch(negUrl)]);
     allStockItems = await res.json();
+    const negItems = await negRes.json();
+    window._negCount = negItems.length;
+    window._negItems = negItems;
     renderStockTable();
   } catch(e) {
     document.getElementById("stock-tbody").innerHTML =
@@ -355,9 +366,28 @@ async function renderStockMain() {
 
 function setStockTab(t) {
   stockTab = t;
-  document.querySelectorAll(".tabs .tab").forEach((b,i) => {
-    b.classList.toggle("active", (i===0&&t==='all')||(i===1&&t==='low'));
-  });
+  if (t === 'neg') {
+    // Show negative stock items from pre-fetched data
+    const tbody = document.getElementById("stock-tbody");
+    const items = window._negItems || [];
+    document.getElementById("stock-title").textContent = `${items.length} Negative Stock Items`;
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">✅ No negative stock items.</td></tr>`;
+    } else {
+      tbody.innerHTML = items.map(i => `
+        <tr class="negative-row">
+          <td>${i.item_name}</td>
+          <td>${i.category}</td>
+          <td><strong>${i.store_name}</strong></td>
+          <td><span class="num negative">${i.current_stock}</span></td>
+          <td>${i.threshold}</td>
+          <td><span class="badge critical">⛔ NEGATIVE</span></td>
+        </tr>`).join("");
+    }
+    renderStockMain();  // re-render to update card highlights
+    return;
+  }
+  renderStockMain();
   renderStockTable();
 }
 
@@ -366,6 +396,7 @@ function renderStockTable() {
   const tbody  = document.getElementById("stock-tbody");
   if (!tbody) return;
 
+  if (stockTab === 'neg') return;  // handled by setStockTab
   let filtered = allStockItems.filter(i => {
     const match = i.item_name.toLowerCase().includes(search) ||
                   i.category.toLowerCase().includes(search) ||
@@ -444,17 +475,24 @@ async function renderSalesMain() {
     </div>
     ${bannerHtml}
     <div class="summary-row">
-      <div class="stat-card"><div class="label">Total Items</div><div class="value">${totalItems}</div></div>
-      <div class="stat-card ${lowItems>0?'blue-card':''}"><div class="label">Low Sales</div><div class="value">${lowItems}</div></div>
-      <div class="stat-card"><div class="label">Total Qty Sold</div><div class="value">${Math.round(totalQty).toLocaleString()}</div></div>
-      <div class="stat-card"><div class="label">Stores</div><div class="value">${stores.length}</div></div>
+      <div class="stat-card clickable ${salesTab==='all'?'selected selected-green':''}" onclick="setSalesTab('all')" title="Show all items">
+        <div class="label">📦 Total Items</div><div class="value">${totalItems}</div>
+      </div>
+      <div class="stat-card clickable ${lowItems>0?'blue-card':''} ${salesTab==='low'?'selected selected-blue':''}" onclick="setSalesTab('low')" title="Show low sales items only">
+        <div class="label">⚠ Low Sales</div><div class="value">${lowItems}</div>
+      </div>
+      <div class="stat-card clickable ${salesTab==='drop'?'selected selected-orange':''}" onclick="setSalesTab('drop')" title="Show sales drop items">
+        <div class="label">📉 Sales Drop</div><div class="value" id="sales-drop-count">...</div>
+      </div>
+      <div class="stat-card" title="Total quantity sold">
+        <div class="label">📊 Total Qty Sold</div><div class="value">${Math.round(totalQty).toLocaleString()}</div>
+      </div>
+      <div class="stat-card" title="Number of stores">
+        <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
+      </div>
     </div>
     <div class="section-header">
       <h2 id="sales-title">All Sales</h2>
-      <div class="tabs">
-        <button class="tab blue ${salesTab==='all'?'active':''}" onclick="setSalesTab('all')">All Items</button>
-        <button class="tab blue ${salesTab==='low'?'active':''}" onclick="setSalesTab('low')">⚠ Low Sales Only</button>
-      </div>
     </div>
     <input class="search-bar" type="text" id="sales-search" placeholder="Search articles..." oninput="renderSalesTable()"/>
     <div class="table-wrap">
@@ -468,6 +506,15 @@ async function renderSalesMain() {
     </div>`;
 
   await fetchSalesData();
+  // Pre-load sales drop count for card
+  try {
+    const dropUrl = currentStore
+      ? `${API}/alerts/sales-drop?drop_pct=30&month=${selectedMonth}&store=${currentStore}`
+      : `${API}/alerts/sales-drop?drop_pct=30&month=${selectedMonth}`;
+    const dropItems = await fetch(dropUrl).then(r => r.json());
+    const el = document.getElementById("sales-drop-count");
+    if (el) el.textContent = dropItems.length;
+  } catch(e) {}
 }
 
 async function fetchSalesData() {
@@ -486,7 +533,45 @@ async function fetchSalesData() {
 
 function setSalesTab(t) {
   salesTab = t;
-  renderSalesTable();
+  if (t === 'drop') {
+    loadSalesDropInline();
+    return;
+  }
+  renderSalesMain();
+}
+
+async function loadSalesDropInline() {
+  const tbody = document.getElementById("sales-tbody");
+  if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="loading">Loading sales drop data...</td></tr>`;
+  try {
+    const url = currentStore
+      ? `${API}/alerts/sales-drop?drop_pct=30&month=${selectedMonth}&store=${currentStore}`
+      : `${API}/alerts/sales-drop?drop_pct=30&month=${selectedMonth}`;
+    const items = await fetch(url).then(r => r.json());
+    document.getElementById("sales-drop-count").textContent = items.length;
+    document.getElementById("sales-title").textContent = `${items.length} Sales Drop Alerts (30%+) — ${selectedMonth}`;
+    if (!tbody) return;
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">✅ No sales drops found.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = items.map(i => {
+      const rowClass = i.severity === "critical" ? "critical-row" : "warning-row";
+      const badgeClass = i.severity === "critical" ? "critical" : "warning-badge";
+      return `
+      <tr class="${rowClass}">
+        <td>${i.article}</td>
+        <td>${i.category}</td>
+        <td><strong>${i.store_name}</strong></td>
+        <td><span class="num ok">${i.prev_qty} <small style="color:var(--muted)">${i.prev_month}</small></span></td>
+        <td><span class="num ${i.severity==='critical'?'low':'grey'}">${i.current_qty}</span></td>
+        <td><span class="badge ${badgeClass}">📉 ${i.drop_pct}% drop</span></td>
+      </tr>`;
+    }).join("");
+    renderSalesMain(); // re-render to update card highlights
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="empty">❌ Cannot connect to API.</td></tr>`;
+  }
 }
 
 function renderSalesTable() {
