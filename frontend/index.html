@@ -304,6 +304,7 @@ async function renderStockMain() {
     low   += storeSummary[s]?.low_stock_items || 0;
   });
   const health = total > 0 ? Math.round((1 - low/total)*100) : 100;
+  const negCount = window._negCount || 0;
 
   // Alert banner
   const bannerHtml = low > 0 ? `
@@ -367,7 +368,6 @@ async function renderStockMain() {
 function setStockTab(t) {
   stockTab = t;
   if (t === 'neg') {
-    // Show negative stock items from pre-fetched data
     const tbody = document.getElementById("stock-tbody");
     const items = window._negItems || [];
     document.getElementById("stock-title").textContent = `${items.length} Negative Stock Items`;
@@ -384,10 +384,8 @@ function setStockTab(t) {
           <td><span class="badge critical">⛔ NEGATIVE</span></td>
         </tr>`).join("");
     }
-    renderStockMain();  // re-render to update card highlights
     return;
   }
-  renderStockMain();
   renderStockTable();
 }
 
@@ -568,7 +566,6 @@ async function loadSalesDropInline() {
         <td><span class="badge ${badgeClass}">📉 ${i.drop_pct}% drop</span></td>
       </tr>`;
     }).join("");
-    renderSalesMain(); // re-render to update card highlights
   } catch(e) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="empty">❌ Cannot connect to API.</td></tr>`;
   }
