@@ -12,6 +12,7 @@
     --red:#c0392b; --red-light:#fdecea;
     --orange:#e67e22; --orange-light:#fef3e2;
     --blue:#1a5fa8; --blue-light:#e8f0fb;
+    --crimson:#8b0000; --crimson-light:#ffe4e4;
     --text:#1a1d23; --muted:#6c757d;
     --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
   }
@@ -27,11 +28,11 @@
   .notify-btn:hover{background:var(--green-light)}
   .notify-btn:disabled{opacity:.6;cursor:not-allowed}
 
-  /* Main tabs (Stock / Sales) */
+  /* Main tabs */
   .main-tabs{display:flex;background:var(--surface);border-bottom:2px solid var(--border);padding:0 28px}
   .main-tab{padding:14px 24px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:none;font-family:var(--sans);color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
   .main-tab.active{color:var(--green);border-bottom-color:var(--green)}
-  .main-tab.sales-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+  .main-tab.sales-active{color:var(--blue);border-bottom-color:var(--blue)}
 
   /* Layout */
   .layout{display:flex;height:calc(100vh - 100px)}
@@ -42,48 +43,57 @@
   .store-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:9px 16px;background:none;border:none;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--text);transition:background .15s;text-align:left}
   .store-btn:hover{background:var(--bg)}
   .store-btn.active{background:var(--green-light);color:var(--green);font-weight:600}
-  .store-btn.active.sales-mode{background:var(--blue-light);color:var(--blue)}
   .store-badge{font-size:11px;font-family:var(--mono);background:var(--red-light);color:var(--red);border-radius:10px;padding:2px 7px;font-weight:600}
   .store-badge.ok{background:var(--green-light);color:var(--green)}
-  .store-badge.blue{background:var(--blue-light);color:var(--blue)}
 
   /* Main content */
   main{flex:1;overflow-y:auto;padding:22px 28px}
+
+  /* Clickable summary cards */
+  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;transition:all .2s}
+  .stat-card.clickable{cursor:pointer}
+  .stat-card.clickable:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+  .stat-card .label{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+  .stat-card .value{font-size:28px;font-weight:700;font-family:var(--mono)}
+  /* Selected states */
+  .stat-card.sel-all{border-color:var(--green);background:var(--green-light);border-width:2px}
+  .stat-card.sel-all .value{color:var(--green)}
+  .stat-card.sel-low{border-color:var(--red);background:var(--red-light);border-width:2px}
+  .stat-card.sel-low .value{color:var(--red)}
+  .stat-card.sel-neg{border-color:var(--crimson);background:var(--crimson-light);border-width:2px}
+  .stat-card.sel-neg .value{color:var(--crimson)}
+  .stat-card.sel-saleslow{border-color:var(--blue);background:var(--blue-light);border-width:2px}
+  .stat-card.sel-saleslow .value{color:var(--blue)}
+  .stat-card.sel-drop{border-color:var(--orange);background:var(--orange-light);border-width:2px}
+  .stat-card.sel-drop .value{color:var(--orange)}
+  /* Alert colors */
+  .stat-card.danger{border-color:var(--red);background:var(--red-light)}
+  .stat-card.danger .value{color:var(--red)}
+  .stat-card.crimson-card{border-color:var(--crimson);background:var(--crimson-light)}
+  .stat-card.crimson-card .value{color:var(--crimson)}
+  .stat-card.blue-card{border-color:var(--blue);background:var(--blue-light)}
+  .stat-card.blue-card .value{color:var(--blue)}
+  .stat-card.amber-card{border-color:var(--orange);background:var(--orange-light)}
+  .stat-card.amber-card .value{color:var(--orange)}
+
+  /* Alert banner */
+  .alert-banner{border-radius:10px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+  .alert-banner .icon{font-size:20px}
+  .alert-banner strong{font-size:14px}
+  .alert-banner p{font-size:12px;color:var(--muted);margin-top:2px}
 
   /* Month selector */
   .month-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
   .month-bar label{font-size:13px;font-weight:600;color:var(--muted)}
   .month-select{padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-family:var(--sans);font-size:13px;background:var(--surface);cursor:pointer;outline:none}
-  .month-select:focus{border-color:var(--blue)}
-
-  /* Alert banner */
-  .alert-banner{background:var(--red-light);border:1px solid #f5c6c2;border-radius:10px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
-  .alert-banner.blue{background:var(--blue-light);border-color:#b8d0f0}
-  .alert-banner .icon{font-size:20px}
-  .alert-banner strong{font-size:14px;color:var(--red)}
-  .alert-banner.blue strong{color:var(--blue)}
-  .alert-banner p{font-size:12px;color:var(--muted);margin-top:2px}
-
-  /* Summary cards */
-  .summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
-  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px}
-  .stat-card .label{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-  .stat-card .value{font-size:30px;font-weight:700;font-family:var(--mono)}
-  .stat-card.danger{border-color:var(--red);background:var(--red-light)}
-  .stat-card.danger .value{color:var(--red)}
-  .stat-card.blue-card{border-color:var(--blue);background:var(--blue-light)}
-  .stat-card.blue-card .value{color:var(--blue)}
 
   /* Section header */
-  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
   .section-header h2{font-size:15px;font-weight:700}
-  .tabs{display:flex;gap:4px}
-  .tab{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);transition:all .15s}
-  .tab.active{background:var(--green);color:#fff;border-color:var(--green)}
-  .tab.active.blue{background:var(--blue);border-color:var(--blue)}
 
   /* Search */
-  .search-bar{width:100%;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--sans);margin-bottom:14px;background:var(--surface);outline:none;transition:border-color .15s}
+  .search-bar{width:100%;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--sans);margin-bottom:14px;background:var(--surface);outline:none}
   .search-bar:focus{border-color:var(--green)}
 
   /* Table */
@@ -96,36 +106,37 @@
   tr:hover td{background:#fafbfc}
   tr.low-row td{background:var(--red-light)}
   tr.low-row:hover td{background:#fad7d3}
+  tr.neg-row td{background:var(--crimson-light)}
+  tr.neg-row:hover td{background:#ffc0c0}
+  tr.drop-crit td{background:var(--crimson-light)}
+  tr.drop-warn td{background:var(--orange-light)}
 
   .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono)}
   .badge.low{background:var(--red-light);color:var(--red)}
   .badge.ok{background:var(--green-light);color:var(--green)}
+  .badge.neg{background:var(--crimson-light);color:var(--crimson)}
+  .badge.crit{background:var(--crimson-light);color:var(--crimson)}
+  .badge.warn{background:var(--orange-light);color:var(--orange)}
   .badge.no-thresh{background:#f0f0f0;color:var(--muted)}
 
   .num{font-family:var(--mono);font-size:13px;font-weight:600}
-  .num.low{color:var(--red)}
-  .num.ok{color:var(--green)}
-  .num.grey{color:var(--muted)}
+  .num.low{color:var(--red)} .num.ok{color:var(--green)}
+  .num.neg{color:var(--crimson)} .num.grey{color:var(--muted)}
 
   .thresh-input{width:70px;padding:4px 8px;border:1px solid var(--border);border-radius:5px;font-family:var(--mono);font-size:13px;text-align:center}
-  .thresh-input:focus{outline:none;border-color:var(--green)}
   .save-btn{padding:4px 10px;font-size:12px;background:var(--green);color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:var(--sans);margin-left:5px}
-  .save-btn:hover{opacity:.85}
   .save-btn.blue{background:var(--blue)}
+  .manual-badge{display:inline-block;font-size:10px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;padding:1px 6px;font-weight:600;margin-left:4px}
+  .auto-badge{display:inline-block;font-size:10px;background:var(--green-light);color:var(--green);border:1px solid #a8d5b8;border-radius:4px;padding:1px 6px;font-weight:600;margin-left:4px}
+  .reset-btn{padding:3px 8px;font-size:11px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:5px;cursor:pointer;font-family:var(--sans);margin-left:4px}
+  .auto-hint{font-size:10px;color:var(--muted);font-family:var(--mono);display:block;margin-top:2px}
 
   .loading{text-align:center;padding:50px;color:var(--muted);font-size:14px}
   .empty{text-align:center;padding:50px;color:var(--muted)}
 
-  #toast{position:fixed;bottom:22px;right:22px;background:var(--green);color:#fff;padding:11px 18px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;max-width:360px}
+  #toast{position:fixed;bottom:22px;right:22px;background:var(--green);color:#fff;padding:11px 18px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
   #toast.show{opacity:1}
   #toast.error{background:var(--red)}
-
-  .manual-badge{display:inline-block;font-size:10px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;padding:1px 6px;font-weight:600;margin-left:4px;vertical-align:middle}
-  .auto-badge{display:inline-block;font-size:10px;background:var(--green-light);color:var(--green);border:1px solid #a8d5b8;border-radius:4px;padding:1px 6px;font-weight:600;margin-left:4px;vertical-align:middle}
-  .reset-btn{padding:3px 8px;font-size:11px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:5px;cursor:pointer;font-family:var(--sans);margin-left:4px}
-  .reset-btn:hover{background:#ffe69c}
-  .thresh-wrap{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
-  .auto-hint{font-size:10px;color:var(--muted);font-family:var(--mono);width:100%;margin-top:2px}
 </style>
 </head>
 <body>
@@ -138,12 +149,9 @@
   </div>
 </header>
 
-<!-- Main mode tabs -->
 <div class="main-tabs">
   <button class="main-tab active" id="tab-stock" onclick="switchMode('stock')">📦 Stock Inventory</button>
-  <button class="main-tab sales-tab" id="tab-sales" onclick="switchMode('sales')">📈 Sales Data</button>
-  <button class="main-tab" id="tab-negstock" onclick="switchMode('negstock')" style="color:#8b0000">⛔ Negative Stock</button>
-  <button class="main-tab" id="tab-salesdrop" onclick="switchMode('salesdrop')" style="color:var(--orange)">📉 Sales Drop</button>
+  <button class="main-tab" id="tab-sales" onclick="switchMode('sales')">📈 Sales Data</button>
 </div>
 
 <div class="layout">
@@ -151,784 +159,440 @@
     <h3>Stores</h3>
     <div id="store-list"><div class="loading">...</div></div>
   </aside>
-
-  <main id="main-content">
-    <div class="loading">Loading...</div>
-  </main>
+  <main id="main-content"><div class="loading">Loading...</div></main>
 </div>
 
 <div id="toast"></div>
 
 <script>
-const API = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost" ? "http://127.0.0.1:8000" : "";
+const API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+  ? 'http://127.0.0.1:8000' : '';
 
-let mode         = "stock";   // "stock" | "sales"
+let mode         = 'stock';
 let currentStore = null;
-let stockTab     = "all";     // "all" | "low"
-let salesTab     = "all";
+let stockFilter  = 'all';   // all | low | neg
+let salesFilter  = 'all';   // all | low | drop
+let storeSummary = {};
+let salesSummary = {};
+let months       = [];
+let selectedMonth = '';
 let allStockItems = [];
 let allSalesItems = [];
-let storeSummary  = {};
-let salesSummary  = {};
-let months        = [];
-let selectedMonth = "";
+let negStockItems = [];
+let salesDropItems = [];
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 //  INIT
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 async function init() {
-  await loadMonths();
-  await Promise.all([loadStoreSummary(), loadSalesSummary()]);
+  await Promise.all([loadStoreSummary(), loadMonths()]);
+  await loadSalesSummary();
   await renderSidebar();
   await renderMain();
-  document.getElementById("last-updated").textContent =
-    "Updated: " + new Date().toLocaleTimeString();
+  document.getElementById('last-updated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
 }
 
-// ══════════════════════════════════════════════
-//  MODE SWITCH (Stock / Sales)
-// ══════════════════════════════════════════════
-async function switchMode(m) {
-  mode = m;
-  document.getElementById("tab-stock").classList.toggle("active", m === "stock");
-  document.getElementById("tab-sales").classList.toggle("active", m === "sales");
-  document.getElementById("tab-negstock").classList.toggle("active", m === "negstock");
-  document.getElementById("tab-salesdrop").classList.toggle("active", m === "salesdrop");
-  document.querySelectorAll(".store-btn").forEach(b => {
-    b.classList.toggle("sales-mode", m === "sales");
-  });
-  await renderSidebar();
-  await renderMain();
-}
-
-// ══════════════════════════════════════════════
-//  MONTHS
-// ══════════════════════════════════════════════
 async function loadMonths() {
   try {
-    const res = await fetch(`${API}/sales/months`);
-    months = await res.json();
-    selectedMonth = months[months.length - 1]; // default: latest
-  } catch(e) { months = []; }
+    const r = await fetch(`${API}/sales/months`);
+    months = await r.json();
+    selectedMonth = months[months.length - 1];
+  } catch(e) {}
 }
 
-// ══════════════════════════════════════════════
-//  SUMMARIES
-// ══════════════════════════════════════════════
 async function loadStoreSummary() {
-  try {
-    const res = await fetch(`${API}/dashboard/stock-summary`);
-    storeSummary = await res.json();
-  } catch(e) {}
+  try { storeSummary = await fetch(`${API}/dashboard/stock-summary`).then(r=>r.json()); } catch(e) {}
 }
 
 async function loadSalesSummary() {
   if (!selectedMonth) return;
-  try {
-    const res = await fetch(`${API}/sales/summary?month=${selectedMonth}`);
-    salesSummary = await res.json();
-  } catch(e) {}
+  try { salesSummary = await fetch(`${API}/sales/summary?month=${selectedMonth}`).then(r=>r.json()); } catch(e) {}
 }
 
-// ══════════════════════════════════════════════
-//  SIDEBAR
-// ══════════════════════════════════════════════
-async function renderSidebar() {
-  try {
-    const res    = await fetch(`${API}/stores`);
-    const stores = await res.json();
-    const list   = document.getElementById("store-list");
-    list.innerHTML = "";
-
-    const allBtn = document.createElement("button");
-    allBtn.className = "store-btn active" + (mode === "sales" ? " sales-mode" : "");
-    allBtn.id = "store-btn-all";
-    allBtn.textContent = "All Stores";
-    allBtn.onclick = () => selectStore(null);
-    list.appendChild(allBtn);
-
-    stores.forEach(store => {
-      const btn = document.createElement("button");
-      btn.className = "store-btn" + (mode === "sales" ? " sales-mode" : "");
-      btn.id = `store-btn-${store}`;
-
-      if (mode === "stock") {
-        const s   = storeSummary[store] || {};
-        const low = s.low_stock_items || 0;
-        btn.innerHTML = `${store} <span class="store-badge ${low===0?'ok':''}">${low===0?'✓':low+' low'}</span>`;
-      } else {
-        const s   = salesSummary[store] || {};
-        const low = s.low_sales_items || 0;
-        btn.innerHTML = `${store} <span class="store-badge ${low===0?'ok':'blue'}">${low===0?'✓':low+' low'}</span>`;
-      }
-
-      btn.onclick = () => selectStore(store);
-      list.appendChild(btn);
-    });
-
-    // Mark active
-    const activeId = currentStore ? `store-btn-${currentStore}` : "store-btn-all";
-    document.querySelectorAll(".store-btn").forEach(b => b.classList.remove("active"));
-    document.getElementById(activeId)?.classList.add("active");
-
-  } catch(e) {}
-}
-
-async function selectStore(store) {
-  currentStore = store;
+// ══════════════════════════════
+//  MODE & STORE
+// ══════════════════════════════
+async function switchMode(m) {
+  mode = m;
+  stockFilter = 'all';
+  salesFilter = 'all';
+  ['stock','sales'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.remove('active','sales-active');
+  });
+  if (m === 'stock') document.getElementById('tab-stock').classList.add('active');
+  if (m === 'sales') document.getElementById('tab-sales').classList.add('sales-active');
   await renderSidebar();
   await renderMain();
 }
 
-// ══════════════════════════════════════════════
-//  MAIN CONTENT ROUTER
-// ══════════════════════════════════════════════
-async function renderMain() {
-  if (mode === "stock") await renderStockMain();
-  else if (mode === "sales") await renderSalesMain();
-  else if (mode === "negstock") await renderNegStockMain();
-  else if (mode === "salesdrop") await renderSalesDropMain();
+async function selectStore(store) {
+  currentStore = store;
+  stockFilter = 'all';
+  salesFilter = 'all';
+  await renderSidebar();
+  await renderMain();
 }
 
-// ══════════════════════════════════════════════
-//  STOCK VIEW
-// ══════════════════════════════════════════════
-async function renderStockMain() {
-  const main = document.getElementById("main-content");
-
-  // Compute stats
-  const stores = currentStore ? [currentStore] : Object.keys(storeSummary);
-  let total = 0, low = 0;
-  stores.forEach(s => {
-    total += storeSummary[s]?.total_items || 0;
-    low   += storeSummary[s]?.low_stock_items || 0;
-  });
-  const health = total > 0 ? Math.round((1 - low/total)*100) : 100;
-  const negCount = window._negCount || 0;
-
-  // Alert banner
-  const bannerHtml = low > 0 ? `
-    <div class="alert-banner" id="alert-banner">
-      <div class="icon">🔴</div>
-      <div>
-        <strong>⚠ ${low} Low Stock Alert${low>1?'s':''}</strong>
-        <p>${low} item${low>1?' are':' is'} below threshold${currentStore?' in '+currentStore:' across all stores'}. Reorder required.</p>
-      </div>
-    </div>` : "";
-
-  main.innerHTML = `
-    ${bannerHtml}
-    <div class="summary-row" id="stock-cards-row">
-      <div class="stat-card clickable ${stockTab==='all'?'selected selected-green':''}" onclick="setStockTab('all')" title="Show all items">
-        <div class="label">📦 Total Items</div><div class="value">${total}</div>
-      </div>
-      <div class="stat-card clickable ${low>0?'danger':''} ${stockTab==='low'?'selected selected-red':''}" onclick="setStockTab('low')" title="Show low stock items only">
-        <div class="label">⚠ Low Stock</div><div class="value">${low}</div>
-      </div>
-      <div class="stat-card clickable ${negCount>0?'crimson':''} ${stockTab==='neg'?'selected selected-crimson':''}" onclick="setStockTab('neg')" title="Show negative stock items only">
-        <div class="label">⛔ Negative Stock</div><div class="value">${negCount}</div>
-      </div>
-      <div class="stat-card" title="Number of stores">
-        <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
-      </div>
-      <div class="stat-card" title="Stock health percentage">
-        <div class="label">💚 Health</div><div class="value">${health}%</div>
-      </div>
-    </div>
-    <div class="section-header">
-      <h2 id="stock-title">All Items</h2>
-    </div>
-    <input class="search-bar" type="text" id="stock-search" placeholder="Search items..." oninput="renderStockTable()"/>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>Item Name</th><th>Category</th><th>Store</th>
-          <th>Stock</th><th>Threshold</th><th>Status</th>
-        </tr></thead>
-        <tbody id="stock-tbody"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
-      </table>
-    </div>`;
-
-  // Fetch items + negative stock count
-  const url    = currentStore ? `${API}/inventory?store=${currentStore}` : `${API}/inventory`;
-  const negUrl = currentStore ? `${API}/alerts/negative-stock?store=${currentStore}` : `${API}/alerts/negative-stock`;
+// ══════════════════════════════
+//  SIDEBAR
+// ══════════════════════════════
+async function renderSidebar() {
   try {
-    const [res, negRes] = await Promise.all([fetch(url), fetch(negUrl)]);
-    allStockItems = await res.json();
-    const negItems = await negRes.json();
-    window._negCount = negItems.length;
-    window._negItems = negItems;
+    const stores = await fetch(`${API}/stores`).then(r=>r.json());
+    const list = document.getElementById('store-list');
+    list.innerHTML = '';
+
+    const allBtn = document.createElement('button');
+    allBtn.className = 'store-btn' + (!currentStore ? ' active' : '');
+    allBtn.textContent = 'All Stores';
+    allBtn.onclick = () => selectStore(null);
+    list.appendChild(allBtn);
+
+    stores.forEach(store => {
+      const s   = storeSummary[store] || {};
+      const low = s.low_stock_items || 0;
+      const btn = document.createElement('button');
+      btn.className = 'store-btn' + (currentStore === store ? ' active' : '');
+      btn.innerHTML = `${store} <span class="store-badge ${low===0?'ok':''}">${low===0?'✓':low+' low'}</span>`;
+      btn.onclick = () => selectStore(store);
+      list.appendChild(btn);
+    });
+  } catch(e) {}
+}
+
+// ══════════════════════════════
+//  MAIN ROUTER
+// ══════════════════════════════
+async function renderMain() {
+  if (mode === 'stock') await renderStockMain();
+  else await renderSalesMain();
+}
+
+// ══════════════════════════════
+//  STOCK VIEW
+// ══════════════════════════════
+async function renderStockMain() {
+  const main = document.getElementById('main-content');
+  main.innerHTML = '<div class="loading">Loading inventory...</div>';
+
+  try {
+    // Fetch stock + negative stock in parallel
+    const stockUrl = currentStore ? `${API}/inventory?store=${currentStore}` : `${API}/inventory`;
+    const negUrl   = currentStore ? `${API}/alerts/negative-stock?store=${currentStore}` : `${API}/alerts/negative-stock`;
+
+    const [stockRes, negRes] = await Promise.all([fetch(stockUrl), fetch(negUrl)]);
+    allStockItems  = await stockRes.json();
+    negStockItems  = await negRes.json();
+
+    const stores  = currentStore ? [currentStore] : Object.keys(storeSummary);
+    let total=0, low=0;
+    stores.forEach(s => {
+      total += storeSummary[s]?.total_items || 0;
+      low   += storeSummary[s]?.low_stock_items || 0;
+    });
+    const neg    = negStockItems.length;
+    const health = total > 0 ? Math.round((1-low/total)*100) : 100;
+
+    const banner = low > 0 ? `
+      <div class="alert-banner" style="background:var(--red-light);border:1px solid #f5c6c2">
+        <div class="icon">🔴</div>
+        <div><strong style="color:var(--red)">⚠ ${low} Low Stock Alert${low>1?'s':''}</strong>
+        <p>${low} item${low>1?' are':' is'} below threshold${currentStore?' in '+currentStore:' across all stores'}.</p></div>
+      </div>` : '';
+
+    main.innerHTML = `
+      ${banner}
+      <div class="summary-row">
+        <div class="stat-card clickable ${stockFilter==='all'?'sel-all':''}" onclick="setStockFilter('all')">
+          <div class="label">📦 Total Items</div><div class="value">${total}</div>
+        </div>
+        <div class="stat-card clickable ${low>0?'danger':''} ${stockFilter==='low'?'sel-low':''}" onclick="setStockFilter('low')">
+          <div class="label">⚠ Low Stock</div><div class="value">${low}</div>
+        </div>
+        <div class="stat-card clickable ${neg>0?'crimson-card':''} ${stockFilter==='neg'?'sel-neg':''}" onclick="setStockFilter('neg')">
+          <div class="label">⛔ Negative Stock</div><div class="value">${neg}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">💚 Health</div><div class="value">${health}%</div>
+        </div>
+      </div>
+      <div class="section-header"><h2 id="stock-title">Loading...</h2></div>
+      <input class="search-bar" id="stock-search" type="text" placeholder="Search items..." oninput="renderStockTable()"/>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Item Name</th><th>Category</th><th>Store</th>
+            <th>Stock</th><th>Threshold</th><th>Status</th>
+          </tr></thead>
+          <tbody id="stock-tbody"></tbody>
+        </table>
+      </div>`;
+
     renderStockTable();
   } catch(e) {
-    document.getElementById("stock-tbody").innerHTML =
-      `<tr><td colspan="6" class="empty">❌ Cannot connect to API.</td></tr>`;
+    main.innerHTML = '<div class="empty">❌ Cannot connect to API. Is the server running?</div>';
   }
 }
 
-function setStockTab(t) {
-  stockTab = t;
-  if (t === 'neg') {
-    const tbody = document.getElementById("stock-tbody");
-    const items = window._negItems || [];
-    document.getElementById("stock-title").textContent = `${items.length} Negative Stock Items`;
-    if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty">✅ No negative stock items.</td></tr>`;
-    } else {
-      tbody.innerHTML = items.map(i => `
-        <tr class="negative-row">
-          <td>${i.item_name}</td>
-          <td>${i.category}</td>
-          <td><strong>${i.store_name}</strong></td>
-          <td><span class="num negative">${i.current_stock}</span></td>
-          <td>${i.threshold}</td>
-          <td><span class="badge critical">⛔ NEGATIVE</span></td>
-        </tr>`).join("");
-    }
-    return;
-  }
-  renderStockTable();
+function setStockFilter(f) {
+  stockFilter = f;
+  renderStockMain();
 }
 
 function renderStockTable() {
-  const search = (document.getElementById("stock-search")?.value || "").toLowerCase();
-  const tbody  = document.getElementById("stock-tbody");
+  const tbody  = document.getElementById('stock-tbody');
+  const title  = document.getElementById('stock-title');
+  const search = (document.getElementById('stock-search')?.value||'').toLowerCase();
   if (!tbody) return;
 
-  if (stockTab === 'neg') return;  // handled by setStockTab
-  let filtered = allStockItems.filter(i => {
-    const match = i.item_name.toLowerCase().includes(search) ||
-                  i.category.toLowerCase().includes(search) ||
-                  i.store_name.toLowerCase().includes(search);
-    return match && (stockTab === "all" || i.is_low);
-  });
-
-  document.getElementById("stock-title").textContent =
-    `${filtered.length} Item${filtered.length!==1?'s':''}${currentStore?' — '+currentStore:''}`;
-
-  if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">No items found.</td></tr>`;
+  let items = [];
+  if (stockFilter === 'neg') {
+    items = negStockItems.filter(i =>
+      i.item_name.toLowerCase().includes(search) ||
+      i.store_name.toLowerCase().includes(search)
+    );
+    if (title) title.textContent = `${items.length} Negative Stock Item${items.length!==1?'s':''}${currentStore?' — '+currentStore:''}`;
+    tbody.innerHTML = items.length === 0
+      ? `<tr><td colspan="6" class="empty">✅ No negative stock items found.</td></tr>`
+      : items.map(i => `
+        <tr class="neg-row">
+          <td>${i.item_name}</td><td>${i.category}</td>
+          <td><strong>${i.store_name}</strong></td>
+          <td><span class="num neg">${i.current_stock}</span></td>
+          <td>${i.threshold}</td>
+          <td><span class="badge neg">⛔ NEGATIVE</span></td>
+        </tr>`).join('');
     return;
   }
 
-  tbody.innerHTML = filtered.map(i => `
-    <tr class="${i.is_low?'low-row':''}">
-      <td>${i.item_name}</td>
-      <td>${i.category}</td>
-      <td><strong>${i.store_name}</strong></td>
-      <td><span class="num ${i.is_low?'low':'ok'}">${i.current_stock}</span></td>
-      <td>
-        <input class="thresh-input" type="number" value="${i.threshold}" id="st-${i.id}" min="0"/>
-        <button class="save-btn" onclick="saveStockThreshold(${i.id})">Save</button>
-      </td>
-      <td><span class="badge ${i.is_low?'low':'ok'}">${i.is_low?'⚠ LOW':'✓ OK'}</span></td>
-    </tr>`).join("");
+  items = allStockItems.filter(i => {
+    const m = i.item_name.toLowerCase().includes(search) ||
+              i.category.toLowerCase().includes(search) ||
+              i.store_name.toLowerCase().includes(search);
+    return m && (stockFilter === 'all' || i.is_low);
+  });
+
+  if (title) title.textContent = `${items.length} Item${items.length!==1?'s':''}${currentStore?' — '+currentStore:''}`;
+
+  tbody.innerHTML = items.length === 0
+    ? `<tr><td colspan="6" class="empty">No items found.</td></tr>`
+    : items.map(i => `
+      <tr class="${i.is_low?'low-row':''}">
+        <td>${i.item_name}</td><td>${i.category}</td>
+        <td><strong>${i.store_name}</strong></td>
+        <td><span class="num ${i.is_low?'low':'ok'}">${i.current_stock}</span></td>
+        <td>
+          <input class="thresh-input" type="number" value="${i.threshold}" id="st-${i.id}" min="0"/>
+          <button class="save-btn" onclick="saveStockThreshold(${i.id})">Save</button>
+        </td>
+        <td><span class="badge ${i.is_low?'low':'ok'}">${i.is_low?'⚠ LOW':'✓ OK'}</span></td>
+      </tr>`).join('');
 }
 
 async function saveStockThreshold(id) {
   const val = document.getElementById(`st-${id}`).value;
-  const res = await fetch(`${API}/inventory/${id}/threshold?threshold=${val}`, {method:"PUT"});
-  if (res.ok) {
-    showToast("Stock threshold updated ✓");
-    await loadStoreSummary();
-    await renderSidebar();
-    await renderStockMain();
-  }
+  await fetch(`${API}/inventory/${id}/threshold?threshold=${val}`, {method:'PUT'});
+  showToast('Stock threshold updated ✓');
+  await loadStoreSummary();
+  await renderStockMain();
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 //  SALES VIEW
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 async function renderSalesMain() {
-  const main = document.getElementById("main-content");
+  const main = document.getElementById('main-content');
+  main.innerHTML = '<div class="loading">Loading sales data...</div>';
 
-  // Build month dropdown
-  const monthOptions = months.map(m =>
-    `<option value="${m}" ${m===selectedMonth?'selected':''}>${m}</option>`
-  ).join("");
-
-  // Stats
-  const stores = currentStore ? [currentStore] : Object.keys(salesSummary);
-  let totalItems=0, lowItems=0, totalQty=0;
-  stores.forEach(s => {
-    totalItems += salesSummary[s]?.total_items || 0;
-    lowItems   += salesSummary[s]?.low_sales_items || 0;
-    totalQty   += salesSummary[s]?.total_quantity || 0;
-  });
-
-  const bannerHtml = lowItems > 0 ? `
-    <div class="alert-banner blue">
-      <div class="icon">🔵</div>
-      <div>
-        <strong>⚠ ${lowItems} Low Sales Alert${lowItems>1?'s':''}</strong>
-        <p>${lowItems} item${lowItems>1?' are':' is'} below sales threshold for ${selectedMonth}${currentStore?' in '+currentStore:' across all stores'}.</p>
-      </div>
-    </div>` : "";
-
-  main.innerHTML = `
-    <div class="month-bar">
-      <label>📅 Select Month:</label>
-      <select class="month-select" id="month-sel" onchange="onMonthChange(this.value)">
-        ${monthOptions}
-      </select>
-    </div>
-    ${bannerHtml}
-    <div class="summary-row">
-      <div class="stat-card clickable ${salesTab==='all'?'selected selected-green':''}" onclick="setSalesTab('all')" title="Show all items">
-        <div class="label">📦 Total Items</div><div class="value">${totalItems}</div>
-      </div>
-      <div class="stat-card clickable ${lowItems>0?'blue-card':''} ${salesTab==='low'?'selected selected-blue':''}" onclick="setSalesTab('low')" title="Show low sales items only">
-        <div class="label">⚠ Low Sales</div><div class="value">${lowItems}</div>
-      </div>
-      <div class="stat-card clickable ${salesTab==='drop'?'selected selected-orange':''}" onclick="setSalesTab('drop')" title="Show sales drop items">
-        <div class="label">📉 Sales Drop</div><div class="value" id="sales-drop-count">...</div>
-      </div>
-      <div class="stat-card" title="Total quantity sold">
-        <div class="label">📊 Total Qty Sold</div><div class="value">${Math.round(totalQty).toLocaleString()}</div>
-      </div>
-      <div class="stat-card" title="Number of stores">
-        <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
-      </div>
-    </div>
-    <div class="section-header">
-      <h2 id="sales-title">All Sales</h2>
-    </div>
-    <input class="search-bar" type="text" id="sales-search" placeholder="Search articles..." oninput="renderSalesTable()"/>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>Article</th><th>Category</th><th>Store</th>
-          <th>Qty Sold</th><th>Sales Threshold</th><th>Status</th>
-        </tr></thead>
-        <tbody id="sales-tbody"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
-      </table>
-    </div>`;
-
-  await fetchSalesData();
-  // Pre-load sales drop count for card
   try {
+    const monthOptions = months.map(m =>
+      `<option value="${m}" ${m===selectedMonth?'selected':''}>${m}</option>`
+    ).join('');
+
+    // Fetch sales + drop alerts in parallel
+    const salesUrl = currentStore
+      ? `${API}/sales?month=${selectedMonth}&store=${currentStore}`
+      : `${API}/sales?month=${selectedMonth}`;
     const dropUrl = currentStore
       ? `${API}/alerts/sales-drop?drop_pct=30&month=${selectedMonth}&store=${currentStore}`
       : `${API}/alerts/sales-drop?drop_pct=30&month=${selectedMonth}`;
-    const dropItems = await fetch(dropUrl).then(r => r.json());
-    const el = document.getElementById("sales-drop-count");
-    if (el) el.textContent = dropItems.length;
-  } catch(e) {}
-}
 
-async function fetchSalesData() {
-  const url = currentStore
-    ? `${API}/sales?month=${selectedMonth}&store=${currentStore}`
-    : `${API}/sales?month=${selectedMonth}`;
-  try {
-    const res = await fetch(url);
-    allSalesItems = await res.json();
+    const [salesRes, dropRes] = await Promise.all([fetch(salesUrl), fetch(dropUrl)]);
+    allSalesItems  = await salesRes.json();
+    salesDropItems = await dropRes.json();
+
+    const stores = currentStore ? [currentStore] : Object.keys(salesSummary);
+    let totalItems=0, lowItems=0, totalQty=0;
+    stores.forEach(s => {
+      totalItems += salesSummary[s]?.total_items || 0;
+      lowItems   += salesSummary[s]?.low_sales_items || 0;
+      totalQty   += salesSummary[s]?.total_quantity || 0;
+    });
+    const dropCount = salesDropItems.length;
+    const prevMonth = dropCount > 0 ? salesDropItems[0].prev_month : '';
+
+    const banner = lowItems > 0 ? `
+      <div class="alert-banner" style="background:var(--blue-light);border:1px solid #b8d0f0">
+        <div class="icon">🔵</div>
+        <div><strong style="color:var(--blue)">⚠ ${lowItems} Low Sales Alert${lowItems>1?'s':''}</strong>
+        <p>${lowItems} item${lowItems>1?' are':' is'} below sales threshold for ${selectedMonth}.</p></div>
+      </div>` : '';
+
+    main.innerHTML = `
+      <div class="month-bar">
+        <label>📅 Month:</label>
+        <select class="month-select" onchange="onMonthChange(this.value)">${monthOptions}</select>
+      </div>
+      ${banner}
+      <div class="summary-row">
+        <div class="stat-card clickable ${salesFilter==='all'?'sel-all':''}" onclick="setSalesFilter('all')">
+          <div class="label">📦 Total Items</div><div class="value">${totalItems}</div>
+        </div>
+        <div class="stat-card clickable ${lowItems>0?'blue-card':''} ${salesFilter==='low'?'sel-saleslow':''}" onclick="setSalesFilter('low')">
+          <div class="label">⚠ Low Sales</div><div class="value">${lowItems}</div>
+        </div>
+        <div class="stat-card clickable ${dropCount>0?'amber-card':''} ${salesFilter==='drop'?'sel-drop':''}" onclick="setSalesFilter('drop')">
+          <div class="label">📉 Sales Drop (30%+)</div><div class="value">${dropCount}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">📊 Total Qty Sold</div><div class="value">${Math.round(totalQty).toLocaleString()}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
+        </div>
+      </div>
+      <div class="section-header"><h2 id="sales-title">Loading...</h2></div>
+      <input class="search-bar" id="sales-search" type="text" placeholder="Search articles..." oninput="renderSalesTable()"/>
+      <div class="table-wrap">
+        <table>
+          <thead id="sales-thead"></thead>
+          <tbody id="sales-tbody"></tbody>
+        </table>
+      </div>`;
+
     renderSalesTable();
   } catch(e) {
-    document.getElementById("sales-tbody").innerHTML =
-      `<tr><td colspan="6" class="empty">❌ Cannot connect to API.</td></tr>`;
+    main.innerHTML = '<div class="empty">❌ Cannot connect to API.</div>';
   }
 }
 
-function setSalesTab(t) {
-  salesTab = t;
-  if (t === 'drop') {
-    loadSalesDropInline();
-    return;
-  }
+function setSalesFilter(f) {
+  salesFilter = f;
   renderSalesMain();
 }
 
-async function loadSalesDropInline() {
-  const tbody = document.getElementById("sales-tbody");
-  if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="loading">Loading sales drop data...</td></tr>`;
-  try {
-    const url = currentStore
-      ? `${API}/alerts/sales-drop?drop_pct=30&month=${selectedMonth}&store=${currentStore}`
-      : `${API}/alerts/sales-drop?drop_pct=30&month=${selectedMonth}`;
-    const items = await fetch(url).then(r => r.json());
-    document.getElementById("sales-drop-count").textContent = items.length;
-    document.getElementById("sales-title").textContent = `${items.length} Sales Drop Alerts (30%+) — ${selectedMonth}`;
-    if (!tbody) return;
-    if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty">✅ No sales drops found.</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = items.map(i => {
-      const rowClass = i.severity === "critical" ? "critical-row" : "warning-row";
-      const badgeClass = i.severity === "critical" ? "critical" : "warning-badge";
-      return `
-      <tr class="${rowClass}">
-        <td>${i.article}</td>
-        <td>${i.category}</td>
-        <td><strong>${i.store_name}</strong></td>
-        <td><span class="num ok">${i.prev_qty} <small style="color:var(--muted)">${i.prev_month}</small></span></td>
-        <td><span class="num ${i.severity==='critical'?'low':'grey'}">${i.current_qty}</span></td>
-        <td><span class="badge ${badgeClass}">📉 ${i.drop_pct}% drop</span></td>
-      </tr>`;
-    }).join("");
-  } catch(e) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="empty">❌ Cannot connect to API.</td></tr>`;
-  }
-}
-
 function renderSalesTable() {
-  const search = (document.getElementById("sales-search")?.value || "").toLowerCase();
-  const tbody  = document.getElementById("sales-tbody");
+  const tbody  = document.getElementById('sales-tbody');
+  const thead  = document.getElementById('sales-thead');
+  const title  = document.getElementById('sales-title');
+  const search = (document.getElementById('sales-search')?.value||'').toLowerCase();
   if (!tbody) return;
 
-  let filtered = allSalesItems.filter(i => {
-    const match = i.article.toLowerCase().includes(search) ||
-                  i.category.toLowerCase().includes(search) ||
-                  i.store_name.toLowerCase().includes(search);
-    return match && (salesTab === "all" || i.is_low);
-  });
-
-  document.getElementById("sales-title").textContent =
-    `${filtered.length} Item${filtered.length!==1?'s':''} — ${selectedMonth}${currentStore?' — '+currentStore:''}`;
-
-  if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">No items found.</td></tr>`;
+  if (salesFilter === 'drop') {
+    if (thead) thead.innerHTML = `<tr><th>Article</th><th>Category</th><th>Store</th><th>Prev Month</th><th>This Month</th><th>Drop %</th><th>Severity</th></tr>`;
+    const items = salesDropItems.filter(i =>
+      i.article.toLowerCase().includes(search) || i.store_name.toLowerCase().includes(search)
+    );
+    const prevMonth = items.length > 0 ? items[0].prev_month : '';
+    if (title) title.textContent = `${items.length} Sales Drop Alert${items.length!==1?'s':''} — ${selectedMonth} vs ${prevMonth}`;
+    tbody.innerHTML = items.length === 0
+      ? `<tr><td colspan="7" class="empty">✅ No sales drops of 30%+ found.</td></tr>`
+      : items.map(i => `
+        <tr class="${i.severity==='critical'?'drop-crit':'drop-warn'}">
+          <td>${i.article}</td><td>${i.category}</td>
+          <td><strong>${i.store_name}</strong></td>
+          <td><span class="num ok">${i.prev_qty}</span></td>
+          <td><span class="num ${i.severity==='critical'?'low':'grey'}">${i.current_qty}</span></td>
+          <td><strong style="color:${i.severity==='critical'?'var(--crimson)':'var(--orange)'}">${i.drop_pct}%</strong></td>
+          <td><span class="badge ${i.severity==='critical'?'crit':'warn'}">${i.severity==='critical'?'🔴 CRITICAL':'🟡 WARNING'}</span></td>
+        </tr>`).join('');
     return;
   }
 
-  tbody.innerHTML = filtered.map(i => {
-    const hasThresh = i.threshold > 0;
-    const statusBadge = !hasThresh
-      ? `<span class="badge no-thresh">No threshold</span>`
-      : i.is_low
-        ? `<span class="badge low">⚠ LOW</span>`
-        : `<span class="badge ok">✓ OK</span>`;
-    const qtyClass = !hasThresh ? 'grey' : i.is_low ? 'low' : 'ok';
-    const manualBadge = i.threshold_manual
-      ? `<span class="manual-badge">✏ Manual</span>`
-      : `<span class="auto-badge">⚡ Auto</span>`;
-    const resetBtn = i.threshold_manual
-      ? `<button class="reset-btn" onclick="resetSalesThreshold(${i.id})" title="Reset to auto avg: ${i.threshold_auto}">↺ Reset</button>`
-      : '';
-    const autoHint = !i.threshold_manual
-      ? `<span class="auto-hint">avg of prev 3 months</span>`
-      : `<span class="auto-hint">auto avg: ${i.threshold_auto}</span>`;
-    return `
-    <tr class="${i.is_low?'low-row':''}">
-      <td>${i.article}</td>
-      <td>${i.category}</td>
-      <td><strong>${i.store_name}</strong></td>
-      <td><span class="num ${qtyClass}">${i.quantity}</span></td>
-      <td>
-        <div class="thresh-wrap">
-          <input class="thresh-input" type="number" value="${i.threshold}" id="sl-${i.id}" min="0"/>
-          <button class="save-btn blue" onclick="saveSalesThreshold(${i.id})">Save</button>
-          ${resetBtn}
-          ${manualBadge}
-          ${autoHint}
-        </div>
-      </td>
-      <td>${statusBadge}</td>
-    </tr>`;
-  }).join("");
+  if (thead) thead.innerHTML = `<tr><th>Article</th><th>Category</th><th>Store</th><th>Qty Sold</th><th>Sales Threshold</th><th>Status</th></tr>`;
+  const items = allSalesItems.filter(i => {
+    const m = i.article.toLowerCase().includes(search) ||
+              i.category.toLowerCase().includes(search) ||
+              i.store_name.toLowerCase().includes(search);
+    return m && (salesFilter === 'all' || i.is_low);
+  });
+
+  if (title) title.textContent = `${items.length} Item${items.length!==1?'s':''} — ${selectedMonth}${currentStore?' — '+currentStore:''}`;
+
+  tbody.innerHTML = items.length === 0
+    ? `<tr><td colspan="6" class="empty">No items found.</td></tr>`
+    : items.map(i => {
+        const hasT = i.threshold > 0;
+        const manBadge = i.threshold_manual
+          ? `<span class="manual-badge">✏ Manual</span>`
+          : `<span class="auto-badge">⚡ Auto</span>`;
+        const resetBtn = i.threshold_manual
+          ? `<button class="reset-btn" onclick="resetSalesThreshold(${i.id})">↺</button>` : '';
+        const hint = `<span class="auto-hint">${i.threshold_manual?'auto: '+i.threshold_auto:'avg prev 3 months'}</span>`;
+        return `
+        <tr class="${i.is_low?'low-row':''}">
+          <td>${i.article}</td><td>${i.category}</td>
+          <td><strong>${i.store_name}</strong></td>
+          <td><span class="num ${!hasT?'grey':i.is_low?'low':'ok'}">${i.quantity}</span></td>
+          <td>
+            <input class="thresh-input" type="number" value="${i.threshold}" id="sl-${i.id}" min="0"/>
+            <button class="save-btn blue" onclick="saveSalesThreshold(${i.id})">Save</button>
+            ${resetBtn}${manBadge}${hint}
+          </td>
+          <td><span class="badge ${!hasT?'no-thresh':i.is_low?'low':'ok'}">${!hasT?'No threshold':i.is_low?'⚠ LOW':'✓ OK'}</span></td>
+        </tr>`;
+      }).join('');
 }
 
 async function saveSalesThreshold(id) {
   const val = document.getElementById(`sl-${id}`).value;
-  const res = await fetch(`${API}/sales/${id}/threshold?threshold=${val}`, {method:"PUT"});
-  if (res.ok) {
-    showToast("Sales threshold updated ✓");
-    await loadSalesSummary();
-    await renderSidebar();
-    await renderSalesMain();
-  }
+  await fetch(`${API}/sales/${id}/threshold?threshold=${val}`, {method:'PUT'});
+  showToast('Sales threshold updated ✓');
+  await loadSalesSummary();
+  await renderSalesMain();
+}
+
+async function resetSalesThreshold(id) {
+  await fetch(`${API}/sales/${id}/threshold/reset`, {method:'PUT'});
+  showToast('↺ Reset to auto average ✓');
+  await renderSalesMain();
 }
 
 async function onMonthChange(m) {
   selectedMonth = m;
   await loadSalesSummary();
-  await renderSidebar();
   await renderSalesMain();
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 //  EMAIL ALERT
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 async function sendAlertNow() {
-  const btn = document.getElementById("notify-btn");
-  btn.disabled = true;
-  btn.textContent = "⏳ Sending...";
+  const btn = document.getElementById('notify-btn');
+  btn.disabled = true; btn.textContent = '⏳ Sending...';
   try {
-    const url = currentStore
-      ? `${API}/notify/send-now?store=${currentStore}`
-      : `${API}/notify/send-now`;
-    const res  = await fetch(url, {method:"POST"});
-    const data = await res.json();
-    if (data.status === "sent")
-      showToast(`✅ Email sent! ${data.items_reported} items reported.`);
-    else if (data.status === "skipped")
-      showToast("✅ No low stock — nothing to report!");
-    else
-      showToast("❌ " + data.message, true);
-  } catch(e) {
-    showToast("❌ Could not reach server", true);
-  }
-  btn.disabled = false;
-  btn.innerHTML = "📧 Send Alert Now";
+    const url = currentStore ? `${API}/notify/send-now?store=${currentStore}` : `${API}/notify/send-now`;
+    const data = await fetch(url, {method:'POST'}).then(r=>r.json());
+    if (data.status === 'sent') showToast(`✅ Email sent! ${data.items_reported} items reported.`);
+    else if (data.status === 'skipped') showToast('✅ No low stock — nothing to report!');
+    else showToast('❌ ' + data.message, true);
+  } catch(e) { showToast('❌ Could not reach server', true); }
+  btn.disabled = false; btn.innerHTML = '📧 Send Alert Now';
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 //  TOAST
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 function showToast(msg, isError=false) {
-  const t = document.getElementById("toast");
+  const t = document.getElementById('toast');
   t.textContent = msg;
-  t.classList.toggle("error", isError);
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3000);
+  t.classList.toggle('error', isError);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
-
-// ══════════════════════════════════════════════
-//  START
-// ══════════════════════════════════════════════
-
-// ══════════════════════════════════════════════
-//  NEGATIVE STOCK VIEW
-// ══════════════════════════════════════════════
-async function renderNegStockMain() {
-  const main = document.getElementById("main-content");
-  main.innerHTML = `<div class="loading">Loading negative stock data...</div>`;
-
-  try {
-    const url = currentStore
-      ? `${API}/alerts/negative-stock?store=${currentStore}`
-      : `${API}/alerts/negative-stock`;
-    const summaryUrl = `${API}/alerts/negative-stock/summary`;
-
-    const [items, summary] = await Promise.all([
-      fetch(url).then(r => r.json()),
-      fetch(summaryUrl).then(r => r.json())
-    ]);
-
-    // Stats
-    const stores = currentStore ? [currentStore] : Object.keys(summary);
-    const totalNeg = items.length;
-    const worstItem = items.length > 0 ? items[0] : null;
-    const totalDeficit = items.reduce((s, i) => s + i.deficit, 0).toFixed(1);
-
-    const bannerHtml = totalNeg > 0 ? `
-      <div class="alert-banner" style="background:#ffe4e4;border-color:#f5a8a8">
-        <div class="icon">⛔</div>
-        <div>
-          <strong style="color:#8b0000">⛔ ${totalNeg} Negative Stock Item${totalNeg>1?'s':''}</strong>
-          <p>These items have stock below zero — sales were recorded but stock was not updated. Immediate data correction required.</p>
-        </div>
-      </div>` : `
-      <div class="alert-banner" style="background:var(--green-light);border-color:#a8d5b8">
-        <div class="icon">✅</div>
-        <div><strong style="color:var(--green)">No Negative Stock — All items have valid stock levels</strong></div>
-      </div>`;
-
-    main.innerHTML = `
-      ${bannerHtml}
-      <div class="summary-row">
-        <div class="stat-card ${totalNeg>0?'crimson':''}">
-          <div class="label">Negative Stock Items</div>
-          <div class="value">${totalNeg}</div>
-        </div>
-        <div class="stat-card ${totalNeg>0?'crimson':''}">
-          <div class="label">Total Deficit Units</div>
-          <div class="value">${totalDeficit}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Stores Affected</div>
-          <div class="value">${Object.keys(summary).length}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Worst Item</div>
-          <div class="value" style="font-size:14px">${worstItem ? worstItem.item_name.substring(0,18)+'...' : 'None'}</div>
-        </div>
-      </div>
-      <div class="section-header">
-        <h2 id="negstock-title">${totalNeg} Negative Stock Item${totalNeg!==1?'s':''}</h2>
-      </div>
-      <input class="search-bar" type="text" id="negstock-search" placeholder="Search items..." oninput="filterNegStock()" style="border-color:#8b0000"/>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Item Name</th><th>Category</th><th>Store</th>
-            <th>Current Stock</th><th>Threshold</th><th>Deficit</th><th>Action Required</th>
-          </tr></thead>
-          <tbody id="negstock-tbody"></tbody>
-        </table>
-      </div>`;
-
-    window._negStockItems = items;
-    filterNegStock();
-
-  } catch(e) {
-    document.getElementById("main-content").innerHTML =
-      `<div class="empty">❌ Cannot connect to API.</div>`;
-  }
-}
-
-function filterNegStock() {
-  const search = (document.getElementById("negstock-search")?.value || "").toLowerCase();
-  const tbody = document.getElementById("negstock-tbody");
-  if (!tbody) return;
-  const items = (window._negStockItems || []).filter(i =>
-    i.item_name.toLowerCase().includes(search) ||
-    i.store_name.toLowerCase().includes(search)
-  );
-  if (!items.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">No negative stock items found.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = items.map(i => `
-    <tr class="negative-row">
-      <td><strong>${i.item_name}</strong></td>
-      <td>${i.category}</td>
-      <td><strong>${i.store_name}</strong></td>
-      <td><span class="num negative">${i.current_stock}</span></td>
-      <td><span class="num">${i.threshold}</span></td>
-      <td><span class="badge critical">-${i.deficit} units</span></td>
-      <td><span style="font-size:12px;color:#8b0000">⚠ Verify stock count & correct data</span></td>
-    </tr>`).join("");
-}
-
-
-// ══════════════════════════════════════════════
-//  SALES DROP VIEW
-// ══════════════════════════════════════════════
-let dropThreshold = 30;
-
-async function renderSalesDropMain() {
-  const main = document.getElementById("main-content");
-  main.innerHTML = `<div class="loading">Loading sales drop data...</div>`;
-
-  try {
-    const monthsRes = await fetch(`${API}/sales/months`);
-    const months = await monthsRes.json();
-    const latestMonth = months[months.length - 1];
-    if (!selectedMonth) selectedMonth = latestMonth;
-
-    const monthOptions = months.slice(1).map(m =>
-      `<option value="${m}" ${m===selectedMonth?'selected':''}>${m}</option>`
-    ).join("");
-
-    const url = currentStore
-      ? `${API}/alerts/sales-drop?drop_pct=${dropThreshold}&month=${selectedMonth}&store=${currentStore}`
-      : `${API}/alerts/sales-drop?drop_pct=${dropThreshold}&month=${selectedMonth}`;
-
-    const items = await fetch(url).then(r => r.json());
-
-    const critical = items.filter(i => i.severity === "critical").length;
-    const warning  = items.filter(i => i.severity === "warning").length;
-    const prevMonth = items.length > 0 ? items[0].prev_month : "";
-
-    const bannerHtml = items.length > 0 ? `
-      <div class="alert-banner" style="background:#fef3c7;border-color:#fcd34d">
-        <div class="icon">📉</div>
-        <div>
-          <strong style="color:var(--orange)">📉 ${items.length} Sales Drop Alert${items.length>1?'s':''}</strong>
-          <p>${critical} critical (50%+ drop) and ${warning} warning (${dropThreshold}-50% drop) vs ${prevMonth}</p>
-        </div>
-      </div>` : `
-      <div class="alert-banner" style="background:var(--green-light);border-color:#a8d5b8">
-        <div class="icon">✅</div>
-        <div><strong style="color:var(--green)">No Sales Drops — All items performing well vs previous month</strong></div>
-      </div>`;
-
-    main.innerHTML = `
-      <div class="month-bar">
-        <label>📅 Compare Month:</label>
-        <select class="month-select" id="drop-month-sel" onchange="onDropMonthChange(this.value)">${monthOptions}</select>
-        <label style="margin-left:16px">⚡ Drop Threshold:</label>
-        <select class="month-select" id="drop-thresh-sel" onchange="onDropThreshChange(this.value)">
-          <option value="20" ${dropThreshold==20?'selected':''}>20% drop</option>
-          <option value="30" ${dropThreshold==30?'selected':''}>30% drop</option>
-          <option value="50" ${dropThreshold==50?'selected':''}>50% drop</option>
-        </select>
-      </div>
-      ${bannerHtml}
-      <div class="summary-row">
-        <div class="stat-card ${items.length>0?'amber':''}">
-          <div class="label">Total Drop Alerts</div>
-          <div class="value">${items.length}</div>
-        </div>
-        <div class="stat-card ${critical>0?'crimson':''}">
-          <div class="label">Critical (50%+)</div>
-          <div class="value">${critical}</div>
-        </div>
-        <div class="stat-card ${warning>0?'amber':''}">
-          <div class="label">Warning (${dropThreshold}-50%)</div>
-          <div class="value">${warning}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Comparing</div>
-          <div class="value" style="font-size:14px">${prevMonth || 'N/A'} → ${selectedMonth}</div>
-        </div>
-      </div>
-      <div class="section-header">
-        <h2>${items.length} Sales Drop Alert${items.length!==1?'s':''} — ${selectedMonth} vs ${prevMonth}</h2>
-      </div>
-      <input class="search-bar" type="text" id="drop-search" placeholder="Search articles..." oninput="filterSalesDrop()" style="border-color:var(--orange)"/>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Article</th><th>Category</th><th>Store</th>
-            <th>${prevMonth} Sales</th><th>${selectedMonth} Sales</th><th>Drop %</th><th>Severity</th>
-          </tr></thead>
-          <tbody id="drop-tbody"></tbody>
-        </table>
-      </div>`;
-
-    window._dropItems = items;
-    filterSalesDrop();
-
-  } catch(e) {
-    document.getElementById("main-content").innerHTML =
-      `<div class="empty">❌ Cannot connect to API.</div>`;
-  }
-}
-
-function filterSalesDrop() {
-  const search = (document.getElementById("drop-search")?.value || "").toLowerCase();
-  const tbody = document.getElementById("drop-tbody");
-  if (!tbody) return;
-  const items = (window._dropItems || []).filter(i =>
-    i.article.toLowerCase().includes(search) ||
-    i.store_name.toLowerCase().includes(search)
-  );
-  if (!items.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">No sales drop alerts found.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = items.map(i => {
-    const barWidth = Math.min(i.drop_pct, 100);
-    const rowClass = i.severity === "critical" ? "critical-row" : "warning-row";
-    const badgeClass = i.severity === "critical" ? "critical" : "warning-badge";
-    return `
-    <tr class="${rowClass}">
-      <td>${i.article}</td>
-      <td>${i.category}</td>
-      <td><strong>${i.store_name}</strong></td>
-      <td><span class="num ok">${i.prev_qty}</span></td>
-      <td><span class="num ${i.severity==='critical'?'low':'grey'}">${i.current_qty}</span></td>
-      <td>
-        <span class="drop-bar" style="width:${barWidth*0.6}px"></span>
-        <strong style="color:${i.severity==='critical'?'#8b0000':'var(--orange)'}">${i.drop_pct}%</strong>
-      </td>
-      <td><span class="badge ${badgeClass}">${i.severity==='critical'?'🔴 CRITICAL':'🟡 WARNING'}</span></td>
-    </tr>`;
-  }).join("");
-}
-
-async function onDropMonthChange(m) {
-  selectedMonth = m;
-  await renderSalesDropMain();
-}
-
-async function onDropThreshChange(v) {
-  dropThreshold = parseInt(v);
-  await renderSalesDropMain();
-}
-
 
 init();
 </script>
