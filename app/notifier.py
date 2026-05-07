@@ -1,56 +1,17 @@
 import smtplib
 import os
-import urllib.request
-import urllib.error
-import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
 
-# ── Config ───────────────────────────────────────────────
-SENDER_EMAIL     = "rainbowalertsystem@gmail.com"
-SENDER_PASSWORD  = "plioaikmxzcjyfad"
-HEADOFFICE_EMAIL = "sahar.noman.javed@gmail.com"
-RESEND_API_KEY   = os.environ.get("RESEND_API_KEY", "re_BJAVZWX9_5Kkj9Hue91rpeNHhrjxv5P6T")
-RESEND_SENDER    = "Rainbow Inventory <onboarding@resend.dev>"
-
-def _is_railway():
-    """Check if running on Railway server."""
-    return os.environ.get("RAILWAY_ENVIRONMENT") is not None or \
-           os.environ.get("RESEND_API_KEY") is not None
+# ── Config (reads from environment variables on Railway) ──
+SENDER_EMAIL     = os.environ.get("SENDER_EMAIL",     "rainbowalertsystem@gmail.com")
+SENDER_PASSWORD  = os.environ.get("SENDER_PASSWORD",  "plioaikmxzcjyfad")
+HEADOFFICE_EMAIL = os.environ.get("HEADOFFICE_EMAIL", "sahar.noman.javed@gmail.com")
 
 
-# ── Send via Resend API ──────────────────────────────────
-def _send_via_resend(subject: str, html_body: str) -> dict:
-    try:
-        payload = json.dumps({
-            "from": RESEND_SENDER,
-            "to": [HEADOFFICE_EMAIL],
-            "subject": subject,
-            "html": html_body
-        }).encode("utf-8")
-
-        req = urllib.request.Request(
-            "https://api.resend.com/emails",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {RESEND_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req) as resp:
-            result = json.loads(resp.read())
-            return {"status": "sent", "message": f"Alert sent to {HEADOFFICE_EMAIL} via Resend", "id": result.get("id")}
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode()
-        return {"status": "error", "message": f"Resend error: {e.code} - {error_body}"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-
-# ── Send via Gmail SMTP ──────────────────────────────────
-def _send_via_gmail(subject: str, html_body: str) -> dict:
+# ── Send via Gmail SMTP ───────────────────────────────────
+def _send_email(subject: str, html_body: str) -> dict:
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -62,22 +23,14 @@ def _send_via_gmail(subject: str, html_body: str) -> dict:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.sendmail(SENDER_EMAIL, HEADOFFICE_EMAIL, msg.as_string())
 
-        return {"status": "sent", "message": f"Alert sent to {HEADOFFICE_EMAIL} via Gmail"}
+        return {"status": "sent", "message": f"Alert sent to {HEADOFFICE_EMAIL}"}
     except smtplib.SMTPAuthenticationError:
         return {"status": "error", "message": "Gmail authentication failed. Check App Password."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 
-# ── Smart send (auto-detect environment) ─────────────────
-def _send_email(subject: str, html_body: str) -> dict:
-    if _is_railway():
-        return _send_via_resend(subject, html_body)
-    else:
-        return _send_via_gmail(subject, html_body)
-
-
-# ── Build stock alert HTML ───────────────────────────────
+# ── Build stock alert HTML ────────────────────────────────
 def _build_stock_html(low_items: list) -> str:
     now = datetime.now().strftime("%d %b %Y, %I:%M %p")
     by_store = {}
@@ -103,41 +56,39 @@ def _build_stock_html(low_items: list) -> str:
 
         store_blocks += f"""
         <div style="margin-bottom:28px">
-          <div style="background:#1a6b3c;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700;font-size:15px">
-            🏪 Store: {store} &nbsp;|&nbsp; {len(items)} low stock item{'s' if len(items)>1 else ''}
+          <div style="background:#1a6b3c;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700">
+            Store: {store} | {len(items)} low stock item{'s' if len(items)>1 else ''}
           </div>
           <table style="width:100%;border-collapse:collapse;background:white;border:1px solid #e0e0e0">
-            <thead>
-              <tr style="background:#f8f9fa">
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Item</th>
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Category</th>
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Stock</th>
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Threshold</th>
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Deficit</th>
-              </tr>
-            </thead>
+            <thead><tr style="background:#f8f9fa">
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Item</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Category</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Stock</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Threshold</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Deficit</th>
+            </tr></thead>
             <tbody>{rows}</tbody>
           </table>
         </div>"""
 
-    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif">
+    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif">
       <div style="max-width:700px;margin:30px auto">
         <div style="background:#1a6b3c;padding:28px 32px;border-radius:12px 12px 0 0">
-          <h1 style="margin:0;color:white;font-size:22px">🛒 Rainbow Grocery — Low Stock Alert</h1>
+          <h1 style="margin:0;color:white;font-size:22px">Rainbow Grocery - Low Stock Alert</h1>
           <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:14px">{now}</p>
         </div>
-        <div style="background:#fdecea;border:1px solid #f5c6c2;padding:16px 32px">
+        <div style="background:#fdecea;padding:16px 32px">
           <span style="font-size:28px;font-weight:700;color:#c0392b">{len(low_items)}</span>
-          <span style="font-size:12px;color:#6c757d;text-transform:uppercase;margin-left:8px">Low Stock Items</span>
+          <span style="font-size:12px;color:#6c757d;margin-left:8px">LOW STOCK ITEMS</span>
         </div>
         <div style="padding:24px 32px;background:white">{store_blocks}</div>
         <div style="background:#e8f5ee;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center">
-          <p style="margin:0;font-size:13px;color:#1a6b3c">Automated alert from <strong>Rainbow Inventory System</strong></p>
+          <p style="margin:0;font-size:13px;color:#1a6b3c">Automated alert from Rainbow Inventory System</p>
         </div>
       </div></body></html>"""
 
 
-# ── Build sales alert HTML ───────────────────────────────
+# ── Build sales alert HTML ────────────────────────────────
 def _build_sales_html(low_items: list, month: str) -> str:
     now = datetime.now().strftime("%d %b %Y, %I:%M %p")
     by_store = {}
@@ -162,45 +113,43 @@ def _build_sales_html(low_items: list, month: str) -> str:
 
         store_blocks += f"""
         <div style="margin-bottom:28px">
-          <div style="background:#1a5fa8;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700;font-size:15px">
-            🏪 Store: {store} &nbsp;|&nbsp; {len(items)} low sales item{'s' if len(items)>1 else ''}
+          <div style="background:#1a5fa8;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700">
+            Store: {store} | {len(items)} low sales item{'s' if len(items)>1 else ''}
           </div>
           <table style="width:100%;border-collapse:collapse;background:white;border:1px solid #e0e0e0">
-            <thead>
-              <tr style="background:#f8f9fa">
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Article</th>
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Category</th>
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Qty Sold</th>
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Threshold</th>
-                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Deficit</th>
-              </tr>
-            </thead>
+            <thead><tr style="background:#f8f9fa">
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Article</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Category</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Qty Sold</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Threshold</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d">Deficit</th>
+            </tr></thead>
             <tbody>{rows}</tbody>
           </table>
         </div>"""
 
-    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif">
+    return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif">
       <div style="max-width:700px;margin:30px auto">
         <div style="background:#1a5fa8;padding:28px 32px;border-radius:12px 12px 0 0">
-          <h1 style="margin:0;color:white;font-size:22px">📉 Rainbow Grocery — Low Sales Alert</h1>
-          <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:14px">{now} — {month}</p>
+          <h1 style="margin:0;color:white;font-size:22px">Rainbow Grocery - Low Sales Alert</h1>
+          <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:14px">{now} - {month}</p>
         </div>
-        <div style="background:#e8f0fb;border:1px solid #b8d0f0;padding:16px 32px">
+        <div style="background:#e8f0fb;padding:16px 32px">
           <span style="font-size:28px;font-weight:700;color:#1a5fa8">{len(low_items)}</span>
-          <span style="font-size:12px;color:#6c757d;text-transform:uppercase;margin-left:8px">Low Sales Items</span>
+          <span style="font-size:12px;color:#6c757d;margin-left:8px">LOW SALES ITEMS</span>
         </div>
         <div style="padding:24px 32px;background:white">{store_blocks}</div>
         <div style="background:#e8f0fb;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center">
-          <p style="margin:0;font-size:13px;color:#1a5fa8">Automated alert from <strong>Rainbow Inventory System</strong></p>
+          <p style="margin:0;font-size:13px;color:#1a5fa8">Automated alert from Rainbow Inventory System</p>
         </div>
       </div></body></html>"""
 
 
-# ── Public functions ─────────────────────────────────────
+# ── Public functions ──────────────────────────────────────
 def send_low_stock_email(low_items: list) -> dict:
     if not low_items:
         return {"status": "skipped", "message": "No low stock items", "items_reported": 0}
-    subject = f"⚠ Low Stock Alert — {len(low_items)} items need reorder ({datetime.now().strftime('%d %b %Y')})"
+    subject = f"Low Stock Alert - {len(low_items)} items need reorder ({datetime.now().strftime('%d %b %Y')})"
     result  = _send_email(subject, _build_stock_html(low_items))
     result["items_reported"] = len(low_items)
     return result
@@ -209,7 +158,7 @@ def send_low_stock_email(low_items: list) -> dict:
 def send_low_sales_email(low_items: list, month: str) -> dict:
     if not low_items:
         return {"status": "skipped", "message": "No low sales items", "items_reported": 0}
-    subject = f"📉 Low Sales Alert — {len(low_items)} items below threshold ({month})"
+    subject = f"Low Sales Alert - {len(low_items)} items below threshold ({month})"
     result  = _send_email(subject, _build_sales_html(low_items, month))
     result["items_reported"] = len(low_items)
     return result
