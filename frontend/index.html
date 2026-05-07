@@ -244,7 +244,7 @@ async function renderSidebar() {
 
     const allBtn = document.createElement('button');
     allBtn.className = 'store-btn' + (!currentStore ? ' active' : '');
-    allBtn.textContent = 'All Stores';
+    allBtn.innerHTML = `All Stores <span class="store-badge ok" style="margin-left:4px">${stores.length}</span>`;
     allBtn.onclick = () => selectStore(null);
     list.appendChild(allBtn);
 
@@ -319,7 +319,7 @@ async function renderStockMain() {
           <div class="label">💚 Health</div><div class="value">${health}%</div>
         </div>
       </div>
-      <div class="section-header"><h2 id="stock-title">Loading...</h2></div>
+      <div class="section-header" style="margin-bottom:14px"><h2 id="stock-title">Loading...</h2></div>
       <input class="search-bar" id="stock-search" type="text" placeholder="Search items..." oninput="renderStockTable()"/>
       <div class="table-wrap">
         <table>
@@ -464,7 +464,7 @@ async function renderSalesMain() {
           <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
         </div>
       </div>
-      <div class="section-header"><h2 id="sales-title">Loading...</h2></div>
+      <div class="section-header" style="margin-bottom:14px"><h2 id="sales-title">Loading...</h2></div>
       <input class="search-bar" id="sales-search" type="text" placeholder="Search articles..." oninput="renderSalesTable()"/>
       <div class="table-wrap">
         <table>
