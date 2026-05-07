@@ -312,12 +312,6 @@ async function renderStockMain() {
         <div class="stat-card clickable ${neg>0?'crimson-card':''} ${stockFilter==='neg'?'sel-neg':''}" onclick="setStockFilter('neg')">
           <div class="label">⛔ Negative Stock</div><div class="value">${neg}</div>
         </div>
-        <div class="stat-card">
-          <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">💚 Health</div><div class="value">${health}%</div>
-        </div>
       </div>
       <div class="section-header" style="margin-bottom:14px"><h2 id="stock-title">Loading...</h2></div>
       <input class="search-bar" id="stock-search" type="text" placeholder="Search items..." oninput="renderStockTable()"/>
@@ -456,12 +450,6 @@ async function renderSalesMain() {
         </div>
         <div class="stat-card clickable ${dropCount>0?'amber-card':''} ${salesFilter==='drop'?'sel-drop':''}" onclick="setSalesFilter('drop')">
           <div class="label">📉 Sales Drop (30%+)</div><div class="value">${dropCount}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">📊 Total Qty Sold</div><div class="value">${Math.round(totalQty).toLocaleString()}</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">🏪 Stores</div><div class="value">${stores.length}</div>
         </div>
       </div>
       <div class="section-header" style="margin-bottom:14px"><h2 id="sales-title">Loading...</h2></div>
