@@ -559,6 +559,41 @@ async function onMonthChange(m) {
 // ══════════════════════════════
 //  EMAIL ALERT
 // ══════════════════════════════
+async function sendStockAlert() {
+  const btn = document.getElementById('notify-stock-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sending...';
+  try {
+    const url = currentStore ? `${API}/notify/send-stock?store=${currentStore}` : `${API}/notify/send-stock`;
+    const res  = await fetch(url, {method:'POST'});
+    const data = await res.json();
+    if (data.status === 'sent') showToast(`✅ Stock alert sent! ${data.items_reported} items reported.`);
+    else if (data.status === 'skipped') showToast('✅ No low stock — nothing to report!');
+    else showToast('❌ ' + data.message, true);
+  } catch(e) { showToast('❌ Could not reach server', true); }
+  btn.disabled = false;
+  btn.innerHTML = '📦 Stock Alert';
+}
+
+async function sendSalesAlert() {
+  const btn = document.getElementById('notify-sales-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sending...';
+  try {
+    const month = selectedMonth || '';
+    const url = currentStore
+      ? `${API}/notify/send-sales?store=${currentStore}&month=${month}`
+      : `${API}/notify/send-sales?month=${month}`;
+    const res  = await fetch(url, {method:'POST'});
+    const data = await res.json();
+    if (data.status === 'sent') showToast(`✅ Sales alert sent! ${data.items_reported} items reported.`);
+    else if (data.status === 'skipped') showToast('✅ No low sales — nothing to report!');
+    else showToast('❌ ' + data.message, true);
+  } catch(e) { showToast('❌ Could not reach server', true); }
+  btn.disabled = false;
+  btn.innerHTML = '📈 Sales Alert';
+}
+
 async function sendAlertNow() {
   const btn = document.getElementById('notify-btn');
   btn.disabled = true; btn.textContent = '⏳ Sending...';
