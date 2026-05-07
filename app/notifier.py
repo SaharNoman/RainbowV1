@@ -1,16 +1,56 @@
 import smtplib
+import os
+import urllib.request
+import urllib.error
+import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
 
-# ── Email Config ─────────────────────────────────────────
+# ── Config ───────────────────────────────────────────────
 SENDER_EMAIL     = "rainbowalertsystem@gmail.com"
 SENDER_PASSWORD  = "plioaikmxzcjyfad"
 HEADOFFICE_EMAIL = "sahar.noman.javed@gmail.com"
+RESEND_API_KEY   = os.environ.get("RESEND_API_KEY", "re_BJAVZWX9_5Kkj9Hue91rpeNHhrjxv5P6T")
+RESEND_SENDER    = "Rainbow Inventory <onboarding@resend.dev>"
+
+def _is_railway():
+    """Check if running on Railway server."""
+    return os.environ.get("RAILWAY_ENVIRONMENT") is not None or \
+           os.environ.get("RESEND_API_KEY") is not None
 
 
-# ── Generic send helper ──────────────────────────────────
-def _send(subject: str, html_body: str) -> dict:
+# ── Send via Resend API ──────────────────────────────────
+def _send_via_resend(subject: str, html_body: str) -> dict:
+    try:
+        payload = json.dumps({
+            "from": RESEND_SENDER,
+            "to": [HEADOFFICE_EMAIL],
+            "subject": subject,
+            "html": html_body
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req) as resp:
+            result = json.loads(resp.read())
+            return {"status": "sent", "message": f"Alert sent to {HEADOFFICE_EMAIL} via Resend", "id": result.get("id")}
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode()
+        return {"status": "error", "message": f"Resend error: {e.code} - {error_body}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ── Send via Gmail SMTP ──────────────────────────────────
+def _send_via_gmail(subject: str, html_body: str) -> dict:
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -22,33 +62,44 @@ def _send(subject: str, html_body: str) -> dict:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.sendmail(SENDER_EMAIL, HEADOFFICE_EMAIL, msg.as_string())
 
-        return {"status": "sent", "message": f"Alert sent to {HEADOFFICE_EMAIL}"}
+        return {"status": "sent", "message": f"Alert sent to {HEADOFFICE_EMAIL} via Gmail"}
     except smtplib.SMTPAuthenticationError:
-        return {"status": "error", "message": "Gmail authentication failed. Check App Password in app/notifier.py"}
+        return {"status": "error", "message": "Gmail authentication failed. Check App Password."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 
-# ════════════════════════════════════════════════════════
-# LOW STOCK EMAIL
-# ════════════════════════════════════════════════════════
+# ── Smart send (auto-detect environment) ─────────────────
+def _send_email(subject: str, html_body: str) -> dict:
+    if _is_railway():
+        return _send_via_resend(subject, html_body)
+    else:
+        return _send_via_gmail(subject, html_body)
 
-def build_stock_html(low_items: list) -> str:
+
+# ── Build stock alert HTML ───────────────────────────────
+def _build_stock_html(low_items: list) -> str:
     now = datetime.now().strftime("%d %b %Y, %I:%M %p")
     by_store = {}
     for item in low_items:
-        by_store.setdefault(item["store_name"], []).append(item)
+        s = item["store_name"]
+        if s not in by_store:
+            by_store[s] = []
+        by_store[s].append(item)
 
     store_blocks = ""
     for store, items in sorted(by_store.items()):
-        rows = "".join(f"""
+        rows = ""
+        for i in items:
+            deficit = round(i["threshold"] - i["current_stock"], 2)
+            rows += f"""
             <tr>
               <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">{i['item_name']}</td>
               <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">{i['category']}</td>
               <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#c0392b;font-weight:700">{i['current_stock']}</td>
               <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">{i['threshold']}</td>
-              <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#e67e22;font-weight:600">+{round(i['threshold']-i['current_stock'],2)} needed</td>
-            </tr>""" for i in items)
+              <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#e67e22;font-weight:600">+{deficit} needed</td>
+            </tr>"""
 
         store_blocks += f"""
         <div style="margin-bottom:28px">
@@ -56,13 +107,15 @@ def build_stock_html(low_items: list) -> str:
             🏪 Store: {store} &nbsp;|&nbsp; {len(items)} low stock item{'s' if len(items)>1 else ''}
           </div>
           <table style="width:100%;border-collapse:collapse;background:white;border:1px solid #e0e0e0">
-            <thead><tr style="background:#f8f9fa">
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Item</th>
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Category</th>
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Stock</th>
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Threshold</th>
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Deficit</th>
-            </tr></thead>
+            <thead>
+              <tr style="background:#f8f9fa">
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Item</th>
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Category</th>
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Stock</th>
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Threshold</th>
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Deficit</th>
+              </tr>
+            </thead>
             <tbody>{rows}</tbody>
           </table>
         </div>"""
@@ -73,85 +126,90 @@ def build_stock_html(low_items: list) -> str:
           <h1 style="margin:0;color:white;font-size:22px">🛒 Rainbow Grocery — Low Stock Alert</h1>
           <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:14px">{now}</p>
         </div>
-        <div style="background:#fdecea;border:1px solid #f5c6c2;padding:16px 32px;display:flex;gap:32px">
-          <div><div style="font-size:28px;font-weight:700;color:#c0392b">{len(low_items)}</div><div style="font-size:12px;color:#6c757d;text-transform:uppercase">Low Stock Items</div></div>
-          <div><div style="font-size:28px;font-weight:700;color:#c0392b">{len(by_store)}</div><div style="font-size:12px;color:#6c757d;text-transform:uppercase">Stores Affected</div></div>
+        <div style="background:#fdecea;border:1px solid #f5c6c2;padding:16px 32px">
+          <span style="font-size:28px;font-weight:700;color:#c0392b">{len(low_items)}</span>
+          <span style="font-size:12px;color:#6c757d;text-transform:uppercase;margin-left:8px">Low Stock Items</span>
         </div>
-        <div style="padding:24px 32px;background:#f0f2f5">{store_blocks}</div>
+        <div style="padding:24px 32px;background:white">{store_blocks}</div>
         <div style="background:#e8f5ee;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center">
-          <p style="margin:0;font-size:13px;color:#1a6b3c">Automated alert from <strong>Rainbow Inventory System</strong>. Please reorder at the earliest.</p>
+          <p style="margin:0;font-size:13px;color:#1a6b3c">Automated alert from <strong>Rainbow Inventory System</strong></p>
         </div>
       </div></body></html>"""
 
 
-def send_low_stock_email(low_items: list) -> dict:
-    if not low_items:
-        return {"status": "skipped", "message": "No low stock items found"}
-    subject = f"⚠ Low Stock Alert — {len(low_items)} items need reorder ({datetime.now().strftime('%d %b %Y')})"
-    result = _send(subject, build_stock_html(low_items))
-    result["items_reported"] = len(low_items)
-    return result
-
-
-# ════════════════════════════════════════════════════════
-# LOW SALES EMAIL
-# ════════════════════════════════════════════════════════
-
-def build_sales_html(low_items: list, month: str) -> str:
+# ── Build sales alert HTML ───────────────────────────────
+def _build_sales_html(low_items: list, month: str) -> str:
     now = datetime.now().strftime("%d %b %Y, %I:%M %p")
     by_store = {}
     for item in low_items:
-        by_store.setdefault(item["store_name"], []).append(item)
+        s = item["store_name"]
+        if s not in by_store:
+            by_store[s] = []
+        by_store[s].append(item)
 
     store_blocks = ""
     for store, items in sorted(by_store.items()):
-        rows = "".join(f"""
+        rows = ""
+        for i in items:
+            rows += f"""
             <tr>
               <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">{i['article_name']}</td>
               <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">{i['category']}</td>
               <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#c0392b;font-weight:700">{i['quantity']}</td>
               <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">{i['threshold']}</td>
-              <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#e67e22;font-weight:600">+{round(i['threshold']-i['quantity'],2)} short</td>
-            </tr>""" for i in items)
+              <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#e67e22;font-weight:600">+{i['deficit']} needed</td>
+            </tr>"""
 
         store_blocks += f"""
         <div style="margin-bottom:28px">
-          <div style="background:#8e44ad;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700;font-size:15px">
+          <div style="background:#1a5fa8;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700;font-size:15px">
             🏪 Store: {store} &nbsp;|&nbsp; {len(items)} low sales item{'s' if len(items)>1 else ''}
           </div>
           <table style="width:100%;border-collapse:collapse;background:white;border:1px solid #e0e0e0">
-            <thead><tr style="background:#f8f9fa">
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Article</th>
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Category</th>
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Sales Qty</th>
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Threshold</th>
-              <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Shortfall</th>
-            </tr></thead>
+            <thead>
+              <tr style="background:#f8f9fa">
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Article</th>
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Category</th>
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Qty Sold</th>
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Threshold</th>
+                <th style="padding:10px 14px;text-align:left;font-size:12px;color:#6c757d;text-transform:uppercase">Deficit</th>
+              </tr>
+            </thead>
             <tbody>{rows}</tbody>
           </table>
         </div>"""
 
     return f"""<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif">
       <div style="max-width:700px;margin:30px auto">
-        <div style="background:#8e44ad;padding:28px 32px;border-radius:12px 12px 0 0">
+        <div style="background:#1a5fa8;padding:28px 32px;border-radius:12px 12px 0 0">
           <h1 style="margin:0;color:white;font-size:22px">📉 Rainbow Grocery — Low Sales Alert</h1>
-          <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:14px">Month: {month} &nbsp;|&nbsp; {now}</p>
+          <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:14px">{now} — {month}</p>
         </div>
-        <div style="background:#f3e5f5;border:1px solid #ce93d8;padding:16px 32px;display:flex;gap:32px">
-          <div><div style="font-size:28px;font-weight:700;color:#8e44ad">{len(low_items)}</div><div style="font-size:12px;color:#6c757d;text-transform:uppercase">Low Sales Items</div></div>
-          <div><div style="font-size:28px;font-weight:700;color:#8e44ad">{len(by_store)}</div><div style="font-size:12px;color:#6c757d;text-transform:uppercase">Stores Affected</div></div>
+        <div style="background:#e8f0fb;border:1px solid #b8d0f0;padding:16px 32px">
+          <span style="font-size:28px;font-weight:700;color:#1a5fa8">{len(low_items)}</span>
+          <span style="font-size:12px;color:#6c757d;text-transform:uppercase;margin-left:8px">Low Sales Items</span>
         </div>
-        <div style="padding:24px 32px;background:#f0f2f5">{store_blocks}</div>
-        <div style="background:#f3e5f5;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center">
-          <p style="margin:0;font-size:13px;color:#8e44ad">Automated alert from <strong>Rainbow Inventory System</strong>. Please review sales performance.</p>
+        <div style="padding:24px 32px;background:white">{store_blocks}</div>
+        <div style="background:#e8f0fb;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center">
+          <p style="margin:0;font-size:13px;color:#1a5fa8">Automated alert from <strong>Rainbow Inventory System</strong></p>
         </div>
       </div></body></html>"""
 
 
+# ── Public functions ─────────────────────────────────────
+def send_low_stock_email(low_items: list) -> dict:
+    if not low_items:
+        return {"status": "skipped", "message": "No low stock items", "items_reported": 0}
+    subject = f"⚠ Low Stock Alert — {len(low_items)} items need reorder ({datetime.now().strftime('%d %b %Y')})"
+    result  = _send_email(subject, _build_stock_html(low_items))
+    result["items_reported"] = len(low_items)
+    return result
+
+
 def send_low_sales_email(low_items: list, month: str) -> dict:
     if not low_items:
-        return {"status": "skipped", "message": "No low sales items found"}
+        return {"status": "skipped", "message": "No low sales items", "items_reported": 0}
     subject = f"📉 Low Sales Alert — {len(low_items)} items below threshold ({month})"
-    result = _send(subject, build_sales_html(low_items, month))
+    result  = _send_email(subject, _build_sales_html(low_items, month))
     result["items_reported"] = len(low_items)
     return result
