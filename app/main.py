@@ -221,17 +221,31 @@ def send_now(store: str = Query(None), month: str = Query(None)):
 
 @app.post("/notify/send-stock")
 def send_stock_alert(store: str = Query(None)):
-    """Send stock low alert only."""
-    return send_low_stock_email(fetch_low_stock(store))
+    """Send stock low alert only — runs in background thread."""
+    import threading
+    items = fetch_low_stock(store)
+    if not items:
+        return {"status": "skipped", "message": "No low stock items", "items_reported": 0}
+    def _send():
+        send_low_stock_email(items)
+    threading.Thread(target=_send, daemon=True).start()
+    return {"status": "sent", "message": f"Stock alert sending in background", "items_reported": len(items)}
 
 
 @app.post("/notify/send-sales")
 def send_sales_alert(store: str = Query(None), month: str = Query(None)):
-    """Send sales low alert only."""
+    """Send sales low alert only — runs in background thread."""
+    import threading
     m = month or _get_latest_month()
     if not m:
-        return {"status": "skipped", "message": "No month found"}
-    return send_low_sales_email(fetch_low_sales(m, store), m)
+        return {"status": "skipped", "message": "No month found", "items_reported": 0}
+    items = fetch_low_sales(m, store)
+    if not items:
+        return {"status": "skipped", "message": "No low sales items", "items_reported": 0}
+    def _send():
+        send_low_sales_email(items, m)
+    threading.Thread(target=_send, daemon=True).start()
+    return {"status": "sent", "message": f"Sales alert sending in background for {m}", "items_reported": len(items)}
 
 
 def _get_latest_month():
