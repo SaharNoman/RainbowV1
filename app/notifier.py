@@ -11,7 +11,7 @@ from datetime import datetime
 SENDER_EMAIL      = os.environ.get("SENDER_EMAIL",      "rainbowalertsystem@gmail.com")
 SENDER_PASSWORD   = os.environ.get("SENDER_PASSWORD",   "plioaikmxzcjyfad")
 HEADOFFICE_EMAIL  = os.environ.get("HEADOFFICE_EMAIL",  "sahar.noman.javed@gmail.com")
-SENDGRID_API_KEY  = os.environ.get("SENDGRID_API_KEY",  "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")
+SENDGRID_API_KEY  = os.environ.get("SENDGRID_API_KEY", "")
 
 
 # ── Send via SendGrid HTTPS API ───────────────────────────
