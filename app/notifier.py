@@ -16,6 +16,7 @@ SENDGRID_API_KEY  = os.environ.get("SENDGRID_API_KEY", "")
 
 # ── Send via SendGrid HTTPS API ───────────────────────────
 def _send_via_sendgrid(subject: str, html_body: str) -> dict:
+  print(f"[Email] Key: {SENDGRID_API_KEY[:20] if SENDGRID_API_KEY else 'NOT SET'}")
     try:
         payload = json.dumps({
             "personalizations": [{"to": [{"email": HEADOFFICE_EMAIL}]}],
