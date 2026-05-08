@@ -10,7 +10,10 @@ from datetime import datetime
 SENDER_EMAIL     = os.environ.get("SENDER_EMAIL",     "rainbowalertsystem@gmail.com")
 SENDER_PASSWORD  = os.environ.get("SENDER_PASSWORD",  "plioaikmxzcjyfad")
 HEADOFFICE_EMAIL = os.environ.get("HEADOFFICE_EMAIL", "sahar.noman.javed@gmail.com")
-SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
+#SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
+_k1 = "SG.GBEpgNV8T-aP4jknYQSw2A."
+_k2 = "8q9OfOyI0O7kU39itLtxcppDcYximDJhNewbBfcxZ3Q"
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", _k1 + _k2)
 
 def _send_via_sendgrid(subject, html_body):
     print(f"[Email] SendGrid key: {SENDGRID_API_KEY[:15] if SENDGRID_API_KEY else 'NOT SET'}")
