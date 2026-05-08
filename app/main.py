@@ -587,3 +587,12 @@ def sales_drop_summary(drop_pct: float = Query(30.0), month: str = Query(None)):
         summary[s]["total_drops"] += 1
         summary[s][item["severity"]] += 1
     return summary
+@app.get("/debug/env")
+def debug_env():
+    import os
+    key = os.environ.get("SENDGRID_API_KEY", "")
+    return {
+        "SENDGRID_API_KEY": key[:15] + "..." if key else "NOT SET",
+        "SENDER_EMAIL": os.environ.get("SENDER_EMAIL", "NOT SET"),
+        "HEADOFFICE_EMAIL": os.environ.get("HEADOFFICE_EMAIL", "NOT SET"),
+    }
